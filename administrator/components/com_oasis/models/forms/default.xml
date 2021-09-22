@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form cron="false">
+    <fieldset name="options" label="COM_OASIS_OPTION" addfieldpath="/administrator/components/com_oasis/models/fields">
+        <field name="oasis_currency" type="list" label="Валюта" description="Валюта для загрузки">
+            <option value="rub">Российский рубль</option>
+            <option value="usd">Доллар США</option>
+            <option value="eur">Евро</option>
+            <option value="byn">Белорусский рубль</option>
+            <option value="uah">Гривна</option>
+            <option value="kgs">Киргизский Сом</option>
+            <option value="kzt">Тенге</option>
+        </field>
+        <field name="oasis_no_vat" type="checkbox" label="Без НДС" description="Загрузка товаров без НДС" value="1"/>
+        <field name="oasis_not_on_order" type="checkbox" label="Под заказ" description="Без товаров (под заказ)" value="1"/>
+        <field name="oasis_price_from" type="text" label="Цена от" description="Загружать товары с ценой от"/>
+        <field name="oasis_price_to" type="text" label="Цена до" description="Загружать товары с ценой до"/>
+        <field name="oasis_rating" type="list" label="Тип" description="Типы товаров">
+            <option>-</option>
+            <option value="1">Только новинки</option>
+            <option value="2">Только хиты</option>
+            <option value="3">Только со скидкой</option>
+        </field>
+        <field name="oasis_warehouse_moscow" type="checkbox" label="На складе в Москве" description="Загружть товары на складе в Москве" value="1"/>
+        <field name="oasis_warehouse_europe" type="checkbox" label="На складе в Европе" description="Загружть товары на складе в Европе" value="1"/>
+        <field name="oasis_remote_warehouse" type="checkbox" label="На удаленном складе" description="Загружть товары на удаленном складе" value="1"/>
+        <field name="oasis_categories" type="treecheckbox" label="Категории" description="Дерево категорий"/>
+    </fieldset>
+    <fieldset name="orders" label="COM_OASIS_ORDER" addfieldpath="/administrator/components/com_oasis/models/fields">
+        <field name="oasis_orders" type="orders" label="Заказы" description="Список заказов"/>
+    </fieldset>
+</form>

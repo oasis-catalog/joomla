@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<extension type="component" version="3.9" method="upgrade">
+	<name>COM_OASIS</name>
+	<creationDate>23 August 2021</creationDate>
+	<author>Viktor G.</author>
+	<authorEmail>ever2013@mail.ru</authorEmail>
+	<authorUrl>https://www.oasiscatalog.com/</authorUrl>
+	<copyright>Copyright (C) 2021 Oasiscatalog. All rights reserved.</copyright>
+	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
+	<version>1.0.0</version>
+	<description>COM_OASIS_XML_DESCRIPTION</description>
+	<scriptfile>script.php</scriptfile>
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+	<administration>
+		<!-- Menu entries -->
+		<menu link="index.php?option=com_oasis">COM_OASIS</menu>
+
+		<!-- Core files -->
+		<files folder="admin">
+			<filename>config.xml</filename>
+			<filename>oasis.php</filename>
+			<filename>controller.php</filename>
+			<folder>controllers</folder>
+			<folder>helper</folder>
+			<folder>language</folder>
+			<folder>models</folder>
+			<folder>sql</folder>
+			<folder>views</folder>
+		</files>
+	</administration>
+</extension>
