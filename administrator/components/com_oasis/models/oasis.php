@@ -228,7 +228,11 @@ class OasisModelOasis extends JModelAdmin
         $query = $this->db->getQuery(true);
 
         foreach ($dataSelect as $item) {
-            $query->select($this->db->quoteName($item));
+            if ($item === '*') {
+                $query->select($item);
+            } else {
+                $query->select($this->db->quoteName($item));
+            }
         }
         unset($item);
 
