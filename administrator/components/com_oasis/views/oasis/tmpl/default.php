@@ -118,7 +118,7 @@ $cron_key = md5(JComponentHelper::getParams('com_oasis')->get('oasis_api_key'));
                 if ($name === 'options') {
                     ?>
                     <?php echo JHtml::_('bootstrap.addTab', 'oasisTab', 'options', JText::_('COM_OASIS_OPTION', true)); ?>
-                    <fielset class="adminform">
+                    <fieldset class="adminform">
                         <legend><?php echo JText::_($fieldset->label); ?></legend>
                         <div class="row-fluid">
                             <div class="span6">
@@ -157,22 +157,22 @@ $cron_key = md5(JComponentHelper::getParams('com_oasis')->get('oasis_api_key'));
                                 } ?>
                             </div>
                         </div>
-                    </fielset>
+                    </fieldset>
                     <?php echo JHtml::_('bootstrap.endTab'); ?>
                 <?php } else { ?>
                     <?php echo JHtml::_('bootstrap.addTab', 'oasisTab', 'orders', JText::_('COM_OASIS_ORDER', true)); ?>
-                    <fielset class="adminform">
+                    <fieldset class="adminform">
                         <legend><?php echo JText::_($fieldset->label); ?></legend>
                         <div class="row-fluid">
                             <div class="span12">
                                 <?php foreach ($this->form->getFieldset($name) as $field) { ?>
                                     <div class="control-group">
-                                        <?php echo $field->input; ?>
+                                        <?php echo !empty($field->input) ? $field->input : ''; ?>
                                     </div>
                                 <?php } ?>
                             </div>
                         </div>
-                    </fielset>
+                    </fieldset>
                     <?php echo JHtml::_('bootstrap.endTab'); ?>
                     <?php
                 }
