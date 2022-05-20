@@ -1,4 +1,4 @@
-Перед установкой и использованием компонента Oasis необходимо установить и настроить компонент VirtueMart 3.8.8, скачать его можно на странице  https://virtuemart.net/downloads, а также небходимо скачать и установить переводы https://virtuemart.net/community/translations/virtuemart/ru-RU
+Перед установкой и использованием компонента Oasis необходимо установить и настроить компонент VirtueMart, скачать его можно на странице  https://virtuemart.net/downloads, а также небходимо скачать и установить переводы https://virtuemart.net/community/translations/virtuemart/ru-RU
 
 Настройка VirtueMart:
  - На странице «Инструменты->Инструменты и миграция» во вкладке «Инструменты безопасного пути» создайте и настройте безопасный путь, в папке adminstrator com_virtuemart

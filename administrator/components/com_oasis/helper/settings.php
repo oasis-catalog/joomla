@@ -18,50 +18,51 @@ use Joomla\Registry\Registry;
  *
  * @package     Oasis
  * @subpackage  Helper
- * @since       1.0
+ *
+ * @since 2.0
  */
 final class OasisHelperSettings
 {
-	/**
-	 * Contains the Oasis settings
-	 *
-	 * @var    Registry
-	 * @since  1.0
-	 */
-	private $params = false;
+    /**
+     * Contains the Oasis settings
+     *
+     * @var    Registry
+     *
+     * @since 2.0
+     */
+    private $params = false;
 
-	/**
-	 * Construct the Settings helper.
-	 *
-	 * @param   JDatabaseDriver  $db  Joomla database connector
-	 *
-	 * @since   1.0
-	 */
-	public function __construct(JDatabaseDriver $db)
-	{
-		$query = $db->getQuery(true)
-			->select($db->quoteName('params'))
-			->from($db->quoteName('#__extensions'))
-			->where($db->quoteName('element') . ' = ' . $db->quote('com_oasis'))
-			->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-		$db->setQuery($query);
-		$settings = $db->loadResult();
-		$registry = new Registry($settings);
-		$this->params = $registry;
-	}
+    /**
+     * Construct the Settings helper.
+     *
+     * @param JDatabaseDriver $db Joomla database connector
+     *
+     * @since 2.0
+     */
+    public function __construct(JDatabaseDriver $db)
+    {
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('element') . ' = ' . $db->quote('com_oasis'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+        $settings = $db->loadResult();
+        $registry = new Registry($settings);
+        $this->params = $registry;
+    }
 
-	/**
-	 * Get a requested value.
-	 *
-	 * @param   string  $setting  The setting to get the value for
-	 * @param   mixed   $default  The default value if no $setting is found
-	 *
-	 * @return  array  The field option objects.
-	 *
-	 * @since   1.0
-	 */
-	public function get($setting, $default=false)
-	{
-		return $this->params->get($setting, $default);
-	}
+    /**
+     * Get a requested value.
+     *
+     * @param string $setting The setting to get the value for
+     * @param mixed $default The default value if no $setting is found
+     * @return  array  The field option objects.
+     *
+     * @since 2.0
+     */
+    public function get($setting, $default = false)
+    {
+        return $this->params->get($setting, $default);
+    }
 }

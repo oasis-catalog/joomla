@@ -16,7 +16,8 @@ defined('_JEXEC') or die;
  *
  * @package     Oasis
  * @subpackage  sub controller
- * @since       1.0
+ *
+ * @since 2.0
  */
 class OasisControllerOasis extends JControllerLegacy
 {
@@ -24,7 +25,7 @@ class OasisControllerOasis extends JControllerLegacy
     /**
      * Save params oasis
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function apply()
     {

@@ -16,7 +16,8 @@ defined('_JEXEC') or die;
  *
  * @package     Oasis
  * @subpackage  Helper
- * @since       1.0
+ *
+ * @since 2.0
  */
 final class OasisHelper
 {
@@ -24,14 +25,15 @@ final class OasisHelper
      * Database connector
      *
      * @var    JDatabase
-     * @since  1.0
+     *
+     * @since 2.0
      */
     protected $db;
 
     /**
      * Public class constructor
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function __construct()
     {
@@ -43,10 +45,9 @@ final class OasisHelper
      *
      * @param $data
      * @param $id
-     *
      * @return mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function searchObject($data, $id)
     {
@@ -67,7 +68,7 @@ final class OasisHelper
      * @param array $args
      * @return mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisProducts(array $args = [])
     {
@@ -76,12 +77,12 @@ final class OasisHelper
         $args['fieldset'] = 'full';
 
         $data = [
-            'currency' => $params->get('oasis_currency'),
-            'no_vat' => $params->get('oasis_no_vat'),
-            'not_on_order' => $params->get('oasis_not_on_order'),
-            'price_from' => $params->get('oasis_price_from'),
-            'price_to' => $params->get('oasis_price_to'),
-            'rating' => $params->get('oasis_rating'),
+            'currency'         => $params->get('oasis_currency'),
+            'no_vat'           => $params->get('oasis_no_vat'),
+            'not_on_order'     => $params->get('oasis_not_on_order'),
+            'price_from'       => $params->get('oasis_price_from'),
+            'price_to'         => $params->get('oasis_price_to'),
+            'rating'           => $params->get('oasis_rating'),
             'warehouse_moscow' => $params->get('oasis_warehouse_moscow'),
             'warehouse_europe' => $params->get('oasis_warehouse_europe'),
             'remote_warehouse' => $params->get('oasis_remote_warehouse'),
@@ -115,10 +116,9 @@ final class OasisHelper
     /**
      * @param     $text
      * @param int $len
-     *
      * @return string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function textExcerpt($text, int $len = 15): string
     {
@@ -137,7 +137,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisCurrencies()
     {
@@ -149,7 +149,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisCategories()
     {
@@ -161,7 +161,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisManufacturers()
     {
@@ -173,7 +173,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisStock()
     {
@@ -185,7 +185,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function getOasisQueue($queue_id)
     {
@@ -196,17 +196,16 @@ final class OasisHelper
      * @param       $version
      * @param       $type
      * @param array $args
-     *
      * @return false|mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function curlQuery($version, $type, array $args = [])
     {
         $params = JComponentHelper::getParams('com_oasis');
 
         $args_pref = [
-            'key' => $params->get('oasis_api_key'),
+            'key'    => $params->get('oasis_api_key'),
             'format' => 'json',
         ];
         $args = array_merge($args_pref, $args);
@@ -226,7 +225,7 @@ final class OasisHelper
      * @param int $count
      * @return false|string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function saveImg($data, int $count = 0)
     {
@@ -258,10 +257,9 @@ final class OasisHelper
 
     /**
      * @param $folder
-     *
      * @return false|string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function imgFolder($folder)
     {
@@ -279,96 +277,95 @@ final class OasisHelper
 
     /**
      * @param $str
-     *
      * @return string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public static function transliter($str): string
     {
         $arr_trans = [
-            'А' => 'A',
-            'Б' => 'B',
-            'В' => 'V',
-            'Г' => 'G',
-            'Д' => 'D',
-            'Е' => 'E',
-            'Ё' => 'E',
-            'Ж' => 'J',
-            'З' => 'Z',
-            'И' => 'I',
-            'Й' => 'Y',
-            'К' => 'K',
-            'Л' => 'L',
-            'М' => 'M',
-            'Н' => 'N',
-            'О' => 'O',
-            'П' => 'P',
-            'Р' => 'R',
-            'С' => 'S',
-            'Т' => 'T',
-            'У' => 'U',
-            'Ф' => 'F',
-            'Х' => 'H',
-            'Ц' => 'TS',
-            'Ч' => 'CH',
-            'Ш' => 'SH',
-            'Щ' => 'SCH',
-            'Ъ' => '',
-            'Ы' => 'YI',
-            'Ь' => '',
-            'Э' => 'E',
-            'Ю' => 'YU',
-            'Я' => 'YA',
-            'а' => 'a',
-            'б' => 'b',
-            'в' => 'v',
-            'г' => 'g',
-            'д' => 'd',
-            'е' => 'e',
-            'ё' => 'e',
-            'ж' => 'j',
-            'з' => 'z',
-            'и' => 'i',
-            'й' => 'y',
-            'к' => 'k',
-            'л' => 'l',
-            'м' => 'm',
-            'н' => 'n',
-            'о' => 'o',
-            'п' => 'p',
-            'р' => 'r',
-            'с' => 's',
-            'т' => 't',
-            'у' => 'u',
-            'ф' => 'f',
-            'х' => 'h',
-            'ц' => 'ts',
-            'ч' => 'ch',
-            'ш' => 'sh',
-            'щ' => 'sch',
-            'ъ' => 'y',
-            'ы' => 'yi',
-            'ь' => '',
-            'э' => 'e',
-            'ю' => 'yu',
-            'я' => 'ya',
-            '.' => '-',
-            ' ' => '-',
-            '?' => '-',
-            '/' => '-',
+            'А'  => 'A',
+            'Б'  => 'B',
+            'В'  => 'V',
+            'Г'  => 'G',
+            'Д'  => 'D',
+            'Е'  => 'E',
+            'Ё'  => 'E',
+            'Ж'  => 'J',
+            'З'  => 'Z',
+            'И'  => 'I',
+            'Й'  => 'Y',
+            'К'  => 'K',
+            'Л'  => 'L',
+            'М'  => 'M',
+            'Н'  => 'N',
+            'О'  => 'O',
+            'П'  => 'P',
+            'Р'  => 'R',
+            'С'  => 'S',
+            'Т'  => 'T',
+            'У'  => 'U',
+            'Ф'  => 'F',
+            'Х'  => 'H',
+            'Ц'  => 'TS',
+            'Ч'  => 'CH',
+            'Ш'  => 'SH',
+            'Щ'  => 'SCH',
+            'Ъ'  => '',
+            'Ы'  => 'YI',
+            'Ь'  => '',
+            'Э'  => 'E',
+            'Ю'  => 'YU',
+            'Я'  => 'YA',
+            'а'  => 'a',
+            'б'  => 'b',
+            'в'  => 'v',
+            'г'  => 'g',
+            'д'  => 'd',
+            'е'  => 'e',
+            'ё'  => 'e',
+            'ж'  => 'j',
+            'з'  => 'z',
+            'и'  => 'i',
+            'й'  => 'y',
+            'к'  => 'k',
+            'л'  => 'l',
+            'м'  => 'm',
+            'н'  => 'n',
+            'о'  => 'o',
+            'п'  => 'p',
+            'р'  => 'r',
+            'с'  => 's',
+            'т'  => 't',
+            'у'  => 'u',
+            'ф'  => 'f',
+            'х'  => 'h',
+            'ц'  => 'ts',
+            'ч'  => 'ch',
+            'ш'  => 'sh',
+            'щ'  => 'sch',
+            'ъ'  => 'y',
+            'ы'  => 'yi',
+            'ь'  => '',
+            'э'  => 'e',
+            'ю'  => 'yu',
+            'я'  => 'ya',
+            '.'  => '-',
+            ' '  => '-',
+            '?'  => '-',
+            '/'  => '-',
             '\\' => '-',
-            '*' => '-',
-            ':' => '-',
-            '>' => '-',
-            '|' => '-',
+            '*'  => '-',
+            ':'  => '-',
+            '>'  => '-',
+            '|'  => '-',
             '\'' => '',
-            '(' => '',
-            ')' => '',
-            '!' => '',
-            '@' => '',
-            '%' => '',
-            '`' => '',
+            '('  => '',
+            ')'  => '',
+            '!'  => '',
+            '@'  => '',
+            '%'  => '',
+            '`'  => '',
         ];
 
         $str = str_replace(['-', '+', '.', '?', '/', '\\', '*', ':', '*', '|'], ' ', $str);
@@ -384,16 +381,30 @@ final class OasisHelper
     }
 
     /**
-     * @param $id
+     * @param $msg
+     * @param bool $logFile
+     *
+     * @since 2.0
+     */
+    public static function debug($msg, $logFile = false)
+    {
+//        return;
+
+        if ($logFile) {
+            self::saveToLog($msg);
+        } else {
+            print_r($msg);
+        }
+    }
+
+    /**
      * @param $msg
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
-    public static function saveToLog($id, $msg)
+    public static function saveToLog($msg)
     {
-        return;
-        $str = date('Y-m-d H:i:s') . ' | product_id=' . $id . ' | ' . $msg . PHP_EOL;
+        $str = date('Y-m-d H:i:s') . ' | ' . $msg . PHP_EOL;
         $filename = JPATH_ROOT . DS . 'oasis_log.txt';
         if (!file_exists($filename)) {
             $fp = fopen($filename, 'wb');

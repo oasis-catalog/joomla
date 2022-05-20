@@ -16,20 +16,20 @@ defined('_JEXEC') or die;
  *
  * @package     VirtueMart
  * @subpackage  Oasis
- * @since       1.0
+ *
+ * @since 2.0
  */
 class com_OasisInstallerScript
 {
     /**
      * Actions to perform before installation.
      *
-     * @param string $route  The type of installation being run.
+     * @param string $route The type of installation being run.
      * @param object $parent The parent object.
-     *
      * @return  bool  True on success | False on failure.
-     *
      * @throws Exception
-     * @since   1.0
+     *
+     * @since 2.0
      */
     public function preflight($route, $parent): bool
     {
@@ -49,11 +49,10 @@ class com_OasisInstallerScript
      * Actions to perform after installation.
      *
      * @param object $parent The parent object.
-     *
      * @return  bool  True on success | False on failure.
-     *
      * @throws Exception
-     * @since   1.0
+     *
+     * @since 2.0
      */
     public function postflight($parent)
     {

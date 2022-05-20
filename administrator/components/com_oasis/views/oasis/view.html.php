@@ -15,7 +15,8 @@ defined('_JEXEC') or die;
  *
  * @package     Oasis
  * @subpackage  Imports
- * @since       1.0
+ *
+ * @since 2.0
  */
 class OasisViewOasis extends JViewLegacy
 {
@@ -23,7 +24,8 @@ class OasisViewOasis extends JViewLegacy
      * The form with the field
      *
      * @var    JForm
-     * @since  1.0
+     *
+     * @since 2.0
      */
     protected $form;
 
@@ -31,7 +33,8 @@ class OasisViewOasis extends JViewLegacy
      * JInput.
      *
      * @var    JInput
-     * @since  1.0
+     *
+     * @since 2.0
      */
     protected $input;
 
@@ -39,15 +42,13 @@ class OasisViewOasis extends JViewLegacy
      * Execute and display a template script.
      *
      * @param string $tpl The name of the template file to parse; automatically searches through the template paths.
-     *
      * @return  mixed  A string if successful, otherwise a JError object.
-     *
      * @throws  Exception
      * @throws  RuntimeException
      * @throws  InvalidArgumentException
      * @throws  UnexpectedValueException
-     * @since   1.0
      *
+     * @since 2.0
      */
     public function display($tpl = null)
     {
@@ -77,10 +78,9 @@ class OasisViewOasis extends JViewLegacy
      * Add the page title and toolbar.
      *
      * @return  void
-     *
      * @throws  Exception
-     * @since   1.0
      *
+     * @since 2.0
      */
     private function addToolbar($valid = true)
     {
@@ -93,6 +93,9 @@ class OasisViewOasis extends JViewLegacy
         JToolbarHelper::preferences('com_oasis');
     }
 
+    /**
+     * @since 2.0
+     */
     private function setDocument()
     {
         $document = JFactory::getDocument();

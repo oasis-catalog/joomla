@@ -10,7 +10,7 @@ defined('_JEXEC') or die;
  * @package     Oasis
  * @subpackage  Administrator
  *
- * @since       1.0
+ * @since 2.0
  */
 class OasisController extends JControllerLegacy
 {
@@ -22,12 +22,11 @@ class OasisController extends JControllerLegacy
      * This function is provide as a default implementation, in most cases
      * you will need to override it in your own controllers.
      *
-     * @param boolean $cachable  If true, the view output will be cached
-     * @param array   $urlparams An array of safe url parameters and their variable types, for valid values see {@link JFilterInput::clean()}.
-     *
+     * @param boolean $cachable If true, the view output will be cached
+     * @param array $urlparams An array of safe url parameters and their variable types, for valid values see {@link JFilterInput::clean()}.
      * @return  JControllerLegacy  A JControllerLegacy object to support chaining.
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function display($cachable = false, $urlparams = [])
     {

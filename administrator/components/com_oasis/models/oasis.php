@@ -18,15 +18,17 @@ require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/helpers/config.ph
  *
  * @package     Oasis
  * @subpackage  Oasis
- * @since       1.0
+ *
+ * @since 2.0
  */
 class OasisModelOasis extends JModelAdmin
 {
     /**
-     * Database connector
+     * Virtuemart config
      *
-     * @var    JDatabase
-     * @since  1.0
+     * @var    VmConfig
+     *
+     * @since 2.0
      */
     protected $vmconfig = null;
 
@@ -34,14 +36,15 @@ class OasisModelOasis extends JModelAdmin
      * Database connector
      *
      * @var    JDatabase
-     * @since  1.0
+     *
+     * @since 2.0
      */
     protected $db;
 
     /**
      * Public class constructor
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function __construct($config = [])
     {
@@ -54,12 +57,11 @@ class OasisModelOasis extends JModelAdmin
     /**
      * Get the form.
      *
-     * @param array   $data     Data for the form.
+     * @param array $data Data for the form.
      * @param boolean $loadData True if the form is to load its own data (default case), false if not.
-     *
      * @return  mixed  A JForm object on success | False on failure.
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function getForm($data = [], $loadData = true)
     {
@@ -69,7 +71,7 @@ class OasisModelOasis extends JModelAdmin
             'com_oasis.oasis',
             'default',
             [
-                'control' => 'jform',
+                'control'   => 'jform',
                 'load_data' => $loadData,
             ]
         );
@@ -86,46 +88,44 @@ class OasisModelOasis extends JModelAdmin
      *
      * @return array
      *
-     * @since 1.0
+     * @since 2.0
      */
     protected function loadFormData()
     {
         $params = JComponentHelper::getParams('com_oasis');
 
         $data = [
-            'oasis_currency' => $params->get('oasis_currency'),
-            'oasis_no_vat' => $params->get('oasis_no_vat'),
-            'oasis_not_on_order' => $params->get('oasis_not_on_order'),
-            'oasis_price_from' => $params->get('oasis_price_from'),
-            'oasis_price_to' => $params->get('oasis_price_to'),
-            'oasis_rating' => $params->get('oasis_rating'),
+            'oasis_currency'         => $params->get('oasis_currency'),
+            'oasis_no_vat'           => $params->get('oasis_no_vat'),
+            'oasis_not_on_order'     => $params->get('oasis_not_on_order'),
+            'oasis_price_from'       => $params->get('oasis_price_from'),
+            'oasis_price_to'         => $params->get('oasis_price_to'),
+            'oasis_rating'           => $params->get('oasis_rating'),
             'oasis_warehouse_moscow' => $params->get('oasis_warehouse_moscow'),
             'oasis_warehouse_europe' => $params->get('oasis_warehouse_europe'),
             'oasis_remote_warehouse' => $params->get('oasis_remote_warehouse'),
-            'oasis_categories' => $params->get('oasis_categories'),
+            'oasis_categories'       => $params->get('oasis_categories'),
         ];
 
         return $data;
     }
 
     /**
-     * @param $data
-     *
+     * @param $category
      * @return int|bool
      *
-     * @since 1.0
+     * @since 2.0
      */
-    public function getCategoryId($data)
+    public function getCategoryId($category)
     {
-        return $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['slug' => $data->slug], true);
+        return $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['cat_params' => 'oasis_id="' . $category->id . '"'], false, '' , 'LIKE');
     }
 
     /**
      * @param $data
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getManufacturer($data): int
     {
@@ -136,15 +136,15 @@ class OasisModelOasis extends JModelAdmin
 
             $data_manuf = [
                 'virtuemart_manufacturer_id' => $manufacturer_id,
-                'mf_name' => $data->name,
-                'slug' => $data->slug,
+                'mf_name'                    => $data->name,
+                'slug'                       => $data->slug,
             ];
             $this->addData('#__virtuemart_manufacturers', $data_manuf, true);
             unset($data_manuf);
 
             $data_img = [
                 'folder_name' => 'images/virtuemart/manufacturer',
-                'img_url' => $data->logotype,
+                'img_url'     => $data->logotype,
             ];
 
             $img = OasisHelper::saveImg($data_img);
@@ -152,8 +152,8 @@ class OasisModelOasis extends JModelAdmin
             if ($img) {
                 $this->addData('#__virtuemart_manufacturer_medias', [
                     'virtuemart_manufacturer_id' => $manufacturer_id,
-                    'virtuemart_media_id' => $this->addVirtuemartMedias($img, 'manufacturer'),
-                    'ordering' => 1,
+                    'virtuemart_media_id'        => $this->addVirtuemartMedias($img, 'manufacturer'),
+                    'ordering'                   => 1,
                 ]);
             }
         }
@@ -162,10 +162,9 @@ class OasisModelOasis extends JModelAdmin
     }
 
     /**
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getManufacturerCategories(): int
     {
@@ -176,8 +175,8 @@ class OasisModelOasis extends JModelAdmin
 
             $data_manuf_cat = [
                 'virtuemart_manufacturercategories_id' => $manuf_cat_id,
-                'mf_category_name' => 'oasis',
-                'slug' => 'oasis',
+                'mf_category_name'                     => 'oasis',
+                'slug'                                 => 'oasis',
             ];
             $this->addData('#__virtuemart_manufacturercategories', $data_manuf_cat, true);
             unset($data_manuf_cat);
@@ -191,22 +190,22 @@ class OasisModelOasis extends JModelAdmin
      * @param string $file_type
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addVirtuemartMedias($img, string $file_type = 'product'): int
     {
         $data = [
-            'file_title' => pathinfo($img)['filename'],
+            'file_title'       => pathinfo($img)['filename'],
             'file_description' => '',
-            'file_meta' => '',
-            'file_class' => '',
-            'file_mimetype' => 'image/jpeg',
-            'file_type' => $file_type,
-            'file_url' => $img,
-            'file_url_thumb' => '',
-            'file_params' => '',
-            'file_lang' => '',
-            'created_on' => date('Y-m-d H:i:s'),
+            'file_meta'        => '',
+            'file_class'       => '',
+            'file_mimetype'    => 'image/jpeg',
+            'file_type'        => $file_type,
+            'file_url'         => $img,
+            'file_url_thumb'   => '',
+            'file_params'      => '',
+            'file_lang'        => '',
+            'created_on'       => date('Y-m-d H:i:s'),
         ];
 
         return $this->addData('#__virtuemart_medias', $data);
@@ -215,14 +214,15 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param        $table
      * @param        $dataSelect
-     * @param array  $dataWhere
-     * @param bool   $lang
+     * @param array $dataWhere
+     * @param bool $lang
      * @param string $funcName
+     * @param string $operator
      * @return mixed
      *
-     * @since 1.0
+     * @since 2.0
      */
-    public function getData($table, $dataSelect, array $dataWhere = [], bool $lang = false, string $funcName = '')
+    public function getData($table, $dataSelect, array $dataWhere = [], bool $lang = false, string $funcName = '', string $operator = '=')
     {
         $postfix = $lang ? '_' . $this->vmconfig->_params['vmlang'] : '';
         $query = $this->db->getQuery(true);
@@ -240,7 +240,7 @@ class OasisModelOasis extends JModelAdmin
 
         if ($dataWhere) {
             foreach ($dataWhere as $key => $value) {
-                $query->where($this->db->quoteName($key) . ' = ' . $this->db->quote($value));
+                $query->where($this->db->quoteName($key) . ' ' . $operator . ' ' . $this->db->quote($operator === 'LIKE' ? '%' . $value . '%' : $value));
             }
             unset($key, $value);
         }
@@ -256,10 +256,9 @@ class OasisModelOasis extends JModelAdmin
      * @param       $table
      * @param array $data
      * @param false $lang
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addData($table, array $data = [], bool $lang = false): int
     {
@@ -289,9 +288,9 @@ class OasisModelOasis extends JModelAdmin
      * @param      $table
      * @param      $dataWhere
      * @param      $data
-     *
      * @param bool $lang
-     * @since 1.0
+     *
+     * @since 2.0
      */
     public function upData($table, $dataWhere, $data, bool $lang = false)
     {
@@ -317,9 +316,9 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param      $table
      * @param      $dataWhere
-     *
      * @param bool $lang
-     * @since 1.0
+     *
+     * @since 2.0
      */
     public function deleteData($table, $dataWhere, bool $lang = false)
     {

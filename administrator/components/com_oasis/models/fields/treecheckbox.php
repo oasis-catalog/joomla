@@ -15,29 +15,30 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
 
 /**
- * Класс поля формы TreeCheckbox компонента Oasis.
+ * The TreeCheckbox form field class of the Oasis component
  *
- * @since 1.0
+ * @since 2.0
  */
 class JFormFieldTreeCheckbox extends FormField
 {
     /**
      * @var string
-     * @since 1.0
+     *
+     * @since 2.0
      */
     protected $type = 'TreeCheckbox';
 
     /**
      * @var string
-     * @since 1.0
+     *
+     * @since 2.0
      */
     private $treeCats = '';
 
     /**
-     *
      * @return string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getInput()
     {
@@ -64,11 +65,10 @@ class JFormFieldTreeCheckbox extends FormField
 
     /**
      * @param      $data
-     * @param int  $parent_id
+     * @param int $parent_id
      * @param bool $sw
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function buildTreeCats($data, int $parent_id = 0, bool $sw = false)
     {

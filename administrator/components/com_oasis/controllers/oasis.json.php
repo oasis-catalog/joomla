@@ -16,15 +16,15 @@ defined('_JEXEC') or die;
  *
  * @package     Oasis
  * @subpackage  sub controller
- * @since       1.0
+ *
+ * @since 2.0
  */
 class OasisControllerOasis extends JControllerLegacy
 {
     /**
      * Send order oasis
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function sendOrder()
     {
@@ -42,7 +42,7 @@ class OasisControllerOasis extends JControllerLegacy
                 foreach ($orderProducts as $orderProduct) {
                     $orderProductItems[] = [
                         'productId' => $model->getData('#__oasis_product', ['product_id_oasis'], ['article' => $orderProduct['order_item_sku']]),
-                        'quantity' => $orderProduct['product_quantity'],
+                        'quantity'  => $orderProduct['product_quantity'],
                     ];
                 }
 
@@ -56,8 +56,8 @@ class OasisControllerOasis extends JControllerLegacy
 
                     $options = [
                         'http' => [
-                            'method' => 'POST',
-                            'header' => 'Content-Type: application/json' . PHP_EOL .
+                            'method'  => 'POST',
+                            'header'  => 'Content-Type: application/json' . PHP_EOL .
                                 'Accept: application/json' . PHP_EOL,
                             'content' => json_encode($data),
                         ],

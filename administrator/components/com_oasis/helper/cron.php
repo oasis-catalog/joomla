@@ -58,7 +58,7 @@ define('JPATH_COMPONENT', JPATH_ROOT . '/components/com_oasis');
 define('JPATH_COMPONENT_SITE', JPATH_ROOT . '/components/com_oasis');
 define('JPATH_COMPONENT_ADMINISTRATOR', JPATH_ADMINISTRATOR . '/components/com_oasis');
 
-define('OASIS_VERSION', '1.0');
+define('OASIS_VERSION', '2.0');
 
 $config = JFactory::getConfig();
 
@@ -75,7 +75,7 @@ require_once JPATH_ROOT . '/administrator/components/com_oasis/models/oasis.php'
  * @package     Oasis
  * @subpackage  CLI
  *
- * @since       1.0
+ * @since 2.0
  */
 class Oasiscron extends JApplicationCli
 {
@@ -84,7 +84,8 @@ class Oasiscron extends JApplicationCli
      * Settings class
      *
      * @var    OasisHelperSettings
-     * @since  1.0
+     * 
+     * @since 2.0
      */
     private $settings = null;
 
@@ -92,7 +93,8 @@ class Oasiscron extends JApplicationCli
      * Database class
      *
      * @var    JDatabaseDriver
-     * @since  1.0
+     *
+     * @since 2.0
      */
     private $db = null;
 
@@ -100,7 +102,8 @@ class Oasiscron extends JApplicationCli
      * Model class
      *
      * @var    null
-     * @since  1.0
+     *
+     * @since 2.0
      */
     private $model = null;
 
@@ -108,7 +111,8 @@ class Oasiscron extends JApplicationCli
      * Categories oasis
      *
      * @var null
-     * @since 1.0
+     *
+     * @since 2.0
      */
     private $categories = null;
 
@@ -116,7 +120,8 @@ class Oasiscron extends JApplicationCli
      * Products oasis
      *
      * @var null
-     * @since 1.0
+     *
+     * @since 2.0
      */
     private $products = null;
 
@@ -124,34 +129,37 @@ class Oasiscron extends JApplicationCli
      * Manufacturers oasis
      *
      * @var null
-     * @since 1.0
+     *
+     * @since 2.0
      */
     private $manufacturers = null;
 
     /**
-     * Const ignore attribute
+     * Custom Field Id - Multi Variant
      *
      * @var null
-     * @since 1.0
+     *
+     * @since 2.0
      */
-    private $var_size = 'Размер';
+    private $customFields = null;
 
     /**
      * Class constructor.
      *
-     * @param JInputCli        $input          An optional argument to provide dependency injection for the application's
+     * @param JInputCli $input An optional argument to provide dependency injection for the application's
      *                                         input object.  If the argument is a JInputCli object that object will become
      *                                         the application's input object, otherwise a default input object is created.
-     * @param Registry         $config         An optional argument to provide dependency injection for the application's
+     * @param Registry $config An optional argument to provide dependency injection for the application's
      *                                         config object.  If the argument is a Registry object that object will become
      *                                         the application's config object, otherwise a default config object is created.
-     * @param JEventDispatcher $dispatcher     An optional argument to provide dependency injection for the application's
+     * @param JEventDispatcher $dispatcher An optional argument to provide dependency injection for the application's
      *                                         event dispatcher.  If the argument is a JEventDispatcher object that object will become
      *                                         the application's event dispatcher, if it is null then the default event dispatcher
      *                                         will be created based on the application's loadDispatcher() method.
      *
      * @see     JApplicationBase::loadDispatcher()
-     * @since   1.0
+     *
+     * @since 2.0
      */
 
     public function __construct(JInputCli $input = null, Registry $config = null, JEventDispatcher $dispatcher = null)
@@ -217,10 +225,9 @@ class Oasiscron extends JApplicationCli
      * Entry point for the script
      *
      * @return  void
-     *
      * @throws  OasisException
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function doExecute()
     {
@@ -250,16 +257,69 @@ class Oasiscron extends JApplicationCli
                     $this->categories = OasisHelper::getOasisCategories();
                     $this->products = OasisHelper::getOasisProducts();
                     $this->manufacturers = OasisHelper::getOasisManufacturers();
+                    $this->customFields = $this->checkVirtuemartCustoms();
 
                     $count = count($this->products);
                     $i = 1;
+                    $group_ids = [];
 
                     foreach ($this->products as $product) {
-                        OasisHelper::saveToLog($product->id, 'count:' . $count . ' | item:' . $i);
-                        $this->import($product);
-                        $i++;
+                        $group_ids[$product->group_id][$product->id] = $product;
                     }
-                    unset($product);
+
+                    if ($group_ids) {
+                        foreach ($group_ids as $group_id => $products) {
+                            OasisHelper::debug('[' . $count . '-' . $i . ']' . ' Model: ' . $group_id);
+
+                            if (count($products) === 1) {
+                                $product = reset($products);
+
+                                $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                                    'product_parent_id' => 0,
+                                    'product_sku'       => $product->article,
+                                ]);
+
+                                if (is_null($dbProductId)) {
+                                    $dbProductId = $this->addProduct($product);
+                                    OasisHelper::debug(' | add id: ' . $dbProductId . PHP_EOL);
+                                } else {
+                                    $this->editProduct($dbProductId, $product);
+                                    OasisHelper::debug(' | edit id: ' . $dbProductId . PHP_EOL);
+                                }
+                                $i++;
+                            } else {
+                                $firstProduct = reset($products);
+                                $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                                    'product_parent_id' => 0,
+                                    'product_sku'       => $firstProduct->article,
+                                ]);
+
+                                if (is_null($dbFirstProductId)) {
+                                    $dbFirstProductId = $this->addProduct($firstProduct, true);
+                                    OasisHelper::debug(' | Parent add id: ' . $dbFirstProductId . PHP_EOL);
+                                } else {
+                                    $this->editProduct($dbFirstProductId, $firstProduct, true);
+                                    OasisHelper::debug(' | Parent edit id: ' . $dbFirstProductId . PHP_EOL);
+                                }
+
+                                foreach ($products as $product) {
+                                    $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                                        'product_parent_id' => $dbFirstProductId,
+                                        'product_sku'       => $product->article,
+                                    ]);
+
+                                    if (is_null($dbProductId)) {
+                                        $dbProductId = $this->addProductChild($dbFirstProductId, $product);
+                                        OasisHelper::debug('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | add id: ' . $dbProductId . PHP_EOL);
+                                    } else {
+                                        $this->editProductChild($dbProductId, $product);
+                                        OasisHelper::debug('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | edit id: ' . $dbProductId . PHP_EOL);
+                                    }
+                                    $i++;
+                                }
+                            }
+                        }
+                    }
 
                     $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
 
@@ -274,83 +334,12 @@ class Oasiscron extends JApplicationCli
                 }
 
                 $end_time = microtime(true);
-                OasisHelper::saveToLog('', 'Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.');
+                OasisHelper::debug('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.' . PHP_EOL);
             } catch (Exception $e) {
-
-                echo $e->getMessage() . "\r\n";
-
+                echo $e->getMessage() . PHP_EOL;
                 exit($e->getCode());
             }
         }
-    }
-
-    /**
-     * @param $product
-     *
-     * @return int|null
-     *
-     * @since 1.0
-     */
-    public function import($product): ?int
-    {
-        $result = null;
-
-        if (!is_null($product->parent_size_id) || !is_null($product->parent_volume_id)) {
-            $parent_product_id = null;
-
-            if (!is_null($product->parent_size_id)) {
-                $parent_product_id = $product->parent_size_id;
-            } elseif (!is_null($product->parent_volume_id)) {
-                $parent_product_id = $product->parent_volume_id;
-            }
-
-            if ($parent_product_id === $product->id) {
-                // add parent
-                $result = $this->checkProduct($product, true);
-            } else {
-                $parent_product = [];
-
-                foreach ($this->products as $item) {
-                    if ($item->id === $parent_product_id) {
-                        $parent_product = $item;
-                        break;
-                    }
-                }
-
-                if (!$parent_product) {
-                    $parent_product_oasis = OasisHelper::getOasisProducts(['ids' => $parent_product_id]);
-                    $parent_product = $parent_product_oasis ? array_shift($parent_product_oasis) : false;
-                }
-
-                if (!empty($parent_product)) {
-                    $vmParentProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                        'product_sku' => $parent_product->article,
-                        'product_parent_id' => 0,
-                    ]);
-
-                    if (is_null($vmParentProductId)) {
-                        $vmParentProductId = $this->import($parent_product);
-                    }
-
-                    $vmChildProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                        'product_sku' => $product->article,
-                        'product_parent_id' => $vmParentProductId,
-                    ]);
-
-                    if (is_null($vmChildProductId)) {
-                        $this->addProductChild($vmParentProductId, $product);
-                    } else {
-                        $this->productRelated($vmParentProductId, $product);
-                        $this->editProductChild($vmParentProductId, $product);
-                    }
-                }
-                unset($vmParentProductId, $parent_product_oasis, $parent_product);
-            }
-        } else {
-            $this->checkProduct($product);
-        }
-
-        return $result;
     }
 
     /**
@@ -358,8 +347,7 @@ class Oasiscron extends JApplicationCli
      *
      * @param $stock
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function upStock($stock)
     {
@@ -375,32 +363,12 @@ class Oasiscron extends JApplicationCli
 
     /**
      * @param      $product
-     * @param bool $customField
+     * @param bool $firstProduct
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
-    public function checkProduct($product, bool $customField = false): int
-    {
-        $vmProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], ['product_sku' => $product->article]);
-
-        if (is_null($vmProductId)) {
-            $vmProductId = $this->addProduct($product, $customField);
-        } else {
-            $this->editProduct($vmProductId, $product, $customField);
-        }
-
-        return $vmProductId;
-    }
-
-    /**
-     * @param      $product
-     * @param bool $customField
-     * @return int
-     *
-     * @since 1.0
-     */
-    public function addProduct($product, bool $customField = false): int
+    public function addProduct($product, bool $firstProduct = false): int
     {
         // add product
         $product_id = $this->addVirtuemartProducts($product);
@@ -420,10 +388,16 @@ class Oasiscron extends JApplicationCli
         // prices
         $this->virtuemartProductPrices($product_id, $product);
 
-        // child product
-        if ($customField) {
-            $this->addVirtuemartProductCustomfields($product_id);
-            $this->addProductChild($product_id, $product);
+        // first product for children
+        if ($firstProduct) {
+            $data['customfield_params'] = $this->encodeCustomfieldParams([
+                'selectoptions' => [],
+                'options'       => [
+                    $product_id => ['', '']
+                ]
+            ]);
+
+            $this->addProductCustomfields($product_id, $data);
         } else {
             // add table oasis product
             $this->oasisProduct($product_id, $product);
@@ -435,23 +409,19 @@ class Oasiscron extends JApplicationCli
     /**
      * @param       $vmProductId
      * @param       $product
-     * @param false $customField
+     * @param bool $firstProduct
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
-    public function editProduct($vmProductId, $product, bool $customField = false)
+    public function editProduct($vmProductId, $product, bool $firstProduct = false)
     {
         $this->editVirtuemartProducts($vmProductId, $product);
         $this->virtuemartProductsLang($vmProductId, $product, false, true);
         $this->virtuemartProductCategories($vmProductId, $product);
         $this->virtuemartProductManufacturers($vmProductId, $product);
         $this->virtuemartProductPrices($vmProductId, $product);
-        $this->productRelated($vmProductId, $product);
 
-        if ($customField) {
-            $this->editProductChild($vmProductId, $product);
-        } else {
+        if ($firstProduct == false) {
             $this->oasisProduct($vmProductId, $product);
         }
     }
@@ -459,21 +429,20 @@ class Oasiscron extends JApplicationCli
     /**
      * @param $parent_id
      * @param $product
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addProductChild($parent_id, $product): int
     {
         // add product
         $dataProducts = [
             'product_parent_id' => $parent_id,
-            'product_in_stock' => $product->rating === 5 ? 1000000 : $product->total_stock,
-            'has_categories' => 0,
+            'product_in_stock'  => $product->rating === 5 ? 1000000 : $product->total_stock,
+            'has_categories'    => 0,
             'has_manufacturers' => 0,
-            'has_medias' => 0,
-            'has_prices' => 1,
+            'has_medias'        => 1,
+            'has_prices'        => 1,
         ];
 
         if (is_null($product->total_stock) && $product->rating !== 5) {
@@ -485,21 +454,24 @@ class Oasiscron extends JApplicationCli
         // add table oasis product
         $this->oasisProduct($product_id, $product);
 
+        // images
+        $this->addVirtuemartProductMedias($product_id, $product);
+
         // add product in table default lang virtuemart
         $this->virtuemartProductsLang($product_id, $product, true);
         $this->virtuemartProductPrices($product_id, $product);
+        $this->addСhildProductCustomFields($parent_id, $product_id, $product);
 
         return $product_id;
     }
 
     /**
-     * @param $parent_id
+     * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
-    public function editProductChild($parent_id, $product)
+    public function editProductChild($product_id, $product)
     {
         $dataProducts = [
             'product_in_stock' => $product->rating === 5 ? 1000000 : $product->total_stock,
@@ -508,11 +480,6 @@ class Oasiscron extends JApplicationCli
         if (is_null($product->total_stock) && $product->rating !== 5) {
             $dataProducts['published'] = 0;
         }
-
-        $product_id = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-            'product_parent_id' => $parent_id,
-            'product_sku' => $product->article,
-        ]);
 
         // add table oasis product
         $this->oasisProduct($product_id, $product);
@@ -525,49 +492,93 @@ class Oasiscron extends JApplicationCli
     }
 
     /**
+     * @param $parent_id
      * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
-    public function productRelated($product_id, $product)
+    public function addСhildProductCustomFields($parent_id, $product_id, $product)
     {
-        $vmOasisDataProducts = $this->model->getData('#__oasis_product', ['product_id', 'article'], ['group_id' => $product->group_id], false, 'loadAssocList');
+        $data = [];
 
-        if ($vmOasisDataProducts) {
-            foreach ($vmOasisDataProducts as $vmOasisDataProduct) {
-                $vmProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                    'product_parent_id' => 0,
-                    'product_sku' => $vmOasisDataProduct['article'],
-                ]);
+        foreach ($product->attributes as $attribute) {
+            if (isset($attribute->id) && $attribute->id === 1000000001) {
+                $data['Цвет'] = $attribute->value;
+            }
+        }
+        unset($attribute);
 
-                if (!is_null($vmProductId)) {
-                    if ($product_id !== $vmProductId) {
-                        $this->addVirtuemartProductCustomfields($product_id, $vmProductId);
-                        $this->addVirtuemartProductCustomfields($vmProductId, $product_id);
+        if (!empty($product->size)) {
+            $data['Размер'] = $product->size;
+        }
+
+        $parentCustomFields = $this->getProductCustomfieldParams($parent_id);
+        $parentCustomParams = $this->decodeCustomfieldParams($parentCustomFields['customfield_params']);
+        $options = (array)$parentCustomParams['options'];
+
+        foreach ($data as $key => $item) {
+            $exist = false;
+
+            foreach ($parentCustomParams['selectoptions'] as $param) {
+                if ($param->clabel == $key) {
+                    $values = preg_split('/\r\n?/', $param->values);
+
+                    if (array_search($item, $values) === false) {
+                        $values[] = $item;
+                        $param->values = implode(PHP_EOL, $values);
                     }
+
+                    $exist = true;
+                }
+            }
+
+            if (!$exist) {
+                array_unshift($parentCustomParams['selectoptions'], (object)[
+                    'voption' => 'clabels',
+                    'clabel'  => $key,
+                    'values'  => $item
+                ]);
+            }
+
+            $childCustomParam = $this->getProductCustomfieldParams($product_id, $item);
+
+            if (is_null($childCustomParam)) {
+                $this->addProductCustomfields($product_id, [
+                    'virtuemart_custom_id' => $this->customFields['string_id'],
+                    'customfield_value'    => $item,
+                ]);
+            }
+
+            if (empty($options[$product_id])) {
+                $options[$product_id] = [$item];
+            } else {
+                if (array_search($item, $options[$product_id]) === false) {
+                    $options[$product_id][] = $item;
                 }
             }
         }
+        unset($key, $item, $exist, $param, $values, $childCustomParam);
+
+        $parentCustomParams['options'] = (object)$options;
+        $this->model->upData('#__virtuemart_product_customfields', ['virtuemart_customfield_id' => $parentCustomFields['virtuemart_customfield_id']], ['customfield_params' => $this->encodeCustomfieldParams($parentCustomParams)]);
     }
 
     /**
      * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function oasisProduct($product_id, $product)
     {
         $data = [
-            'product_id_oasis' => $product->id,
-            'group_id' => $product->group_id,
-            'rating' => $product->rating,
+            'product_id_oasis'     => $product->id,
+            'group_id'             => $product->group_id,
+            'rating'               => $product->rating,
             'option_date_modified' => date('Y-m-d H:i:s'),
-            'product_id' => $product_id,
-            'article' => $product->article,
+            'product_id'           => $product_id,
+            'article'              => $product->article,
         ];
 
         $vmOasisProductId = $this->model->getData('#__oasis_product', ['product_id_oasis'], ['product_id_oasis' => $product->id]);
@@ -586,33 +597,33 @@ class Oasiscron extends JApplicationCli
      * @param array $data
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addVirtuemartProducts($product, array $data = []): int
     {
         $dataProduct = [
-            'product_parent_id' => 0,
-            'product_sku' => $product->article,
-            'product_gtin' => '',
-            'product_mpn' => '',
-            'product_weight_uom' => 'KG',
-            'product_lwh_uom' => 'M',
-            'product_url' => '',
-            'product_in_stock' => $product->total_stock,
+            'product_parent_id'    => 0,
+            'product_sku'          => $product->article,
+            'product_gtin'         => '',
+            'product_mpn'          => '',
+            'product_weight_uom'   => 'KG',
+            'product_lwh_uom'      => 'M',
+            'product_url'          => '',
+            'product_in_stock'     => $product->total_stock,
             'product_availability' => '',
-            'product_unit' => 'KG',
-            'product_params' => 'min_order_level=null|max_order_level=null|step_order_level=null|shared_stock="0"|product_box=null|',
-            'intnotes' => '',
-            'metarobot' => '',
-            'metaauthor' => '',
-            'layout' => '',
-            'published' => 1,
-            'has_categories' => 1,
-            'has_manufacturers' => 1,
-            'has_medias' => 1,
-            'has_prices' => 1,
-            'has_shoppergroups' => 0,
-            'created_on' => date('Y-m-d H:i:s'),
+            'product_unit'         => 'KG',
+            'product_params'       => 'min_order_level=null|max_order_level=null|step_order_level=null|shared_stock="0"|product_box=null|',
+            'intnotes'             => '',
+            'metarobot'            => '',
+            'metaauthor'           => '',
+            'layout'               => '',
+            'published'            => (is_null($product->total_stock) && $product->rating !== 5) ? 0 : 1,
+            'has_categories'       => 1,
+            'has_manufacturers'    => 1,
+            'has_medias'           => 1,
+            'has_prices'           => 1,
+            'has_shoppergroups'    => 0,
+            'created_on'           => date('Y-m-d H:i:s'),
         ];
 
         $data += $dataProduct;
@@ -627,12 +638,13 @@ class Oasiscron extends JApplicationCli
      * @param       $product
      * @param array $data
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function editVirtuemartProducts($vmProductId, $product, array $data = [])
     {
         $dataProduct = $this->model->getData('#__virtuemart_products', ['*'], ['virtuemart_product_id' => $vmProductId], false, 'loadAssoc');
         $dataProduct['product_in_stock'] = $product->total_stock;
+        $dataProduct['published'] = (is_null($product->total_stock) && $product->rating !== 5) ? 0 : 1;
 
         $data += $dataProduct;
 
@@ -644,20 +656,21 @@ class Oasiscron extends JApplicationCli
      *
      * @param       $product_id
      * @param       $product
-     * @param bool  $isChild
-     * @param bool  $edit
-     * @since 1.0
+     * @param bool $isChild
+     * @param bool $edit
+     *
+     * @since 2.0
      */
     public function virtuemartProductsLang($product_id, $product, bool $isChild = false, bool $edit = false)
     {
         $data = [
             'virtuemart_product_id' => $product_id,
-            'product_s_desc' => OasisHelper::textExcerpt($product->description, 10),
-            'product_desc' => '<p>' . nl2br($product->description) . '</p>',
-            'product_name' => $product->full_name,
-            'metadesc' => '',
-            'metakey' => '',
-            'customtitle' => '',
+            'product_s_desc'        => OasisHelper::textExcerpt($product->description, 10),
+            'product_desc'          => '<p>' . nl2br($product->description) . '</p>',
+            'product_name'          => $isChild ? $product->full_name : $product->name,
+            'metadesc'              => '',
+            'metakey'               => '',
+            'customtitle'           => '',
         ];
 
         $productAttribute = [];
@@ -665,12 +678,12 @@ class Oasiscron extends JApplicationCli
         foreach ($product->attributes as $attribute) {
             $dim = isset($attribute->dim) ? ' ' . $attribute->dim : '';
 
-            if ($attribute->name !== $this->var_size) {
+            if ($attribute->name !== 'Размер') {
                 $needed = array_search($attribute->name, array_column($productAttribute, 'name'));
 
                 if ($needed === false) {
                     $productAttribute[] = [
-                        'name' => $attribute->name,
+                        'name'  => $attribute->name,
                         'value' => $attribute->value . $dim,
                     ];
                 } else {
@@ -679,7 +692,7 @@ class Oasiscron extends JApplicationCli
                 unset($needed);
             } elseif ($isChild) {
                 $productAttribute[] = [
-                    'name' => $attribute->name,
+                    'name'  => $attribute->name,
                     'value' => $attribute->value . $dim,
                 ];
                 $data['product_name'] = $product->full_name . ' ' . $attribute->value;
@@ -718,8 +731,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function virtuemartProductCategories($product_id, $product)
     {
@@ -730,7 +742,6 @@ class Oasiscron extends JApplicationCli
             foreach ($productCategories as $productCategory) {
                 $this->model->addData('#__virtuemart_product_categories', ['virtuemart_product_id' => $product_id, 'virtuemart_category_id' => $productCategory]);
             }
-            unset($productCategory);
         } else {
             $dataEditCat = [];
 
@@ -738,7 +749,7 @@ class Oasiscron extends JApplicationCli
                 if (array_search($vmProductCategory['virtuemart_category_id'], $productCategories) === false) {
                     $this->model->deleteData('#__virtuemart_product_categories', [
                         'virtuemart_category_id' => $vmProductCategory['virtuemart_category_id'],
-                        'virtuemart_product_id' => $product_id,
+                        'virtuemart_product_id'  => $product_id,
                     ]);
                 } else {
                     $dataEditCat[] = $vmProductCategory['virtuemart_category_id'];
@@ -751,8 +762,8 @@ class Oasiscron extends JApplicationCli
                     $this->model->addData('#__virtuemart_product_categories', ['virtuemart_product_id' => $product_id, 'virtuemart_category_id' => $productCategory]);
                 }
             }
-            unset($productCategory);
         }
+        unset($productCategory);
     }
 
     /**
@@ -761,10 +772,9 @@ class Oasiscron extends JApplicationCli
      *
      * @param $product_id
      * @param $product
-     *
-     *
      * @return mixed
-     * @since 1.0
+     *
+     * @since 2.0
      */
     public function virtuemartProductManufacturers($product_id, $product)
     {
@@ -792,8 +802,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function addVirtuemartProductMedias($product_id, $product)
     {
@@ -804,7 +813,7 @@ class Oasiscron extends JApplicationCli
                     if (is_null($vmImageId)) {
                         $data_img = [
                             'folder_name' => 'images/virtuemart/product/oasis',
-                            'img_url' => $image->superbig,
+                            'img_url'     => $image->superbig,
                         ];
 
                         $img = OasisHelper::saveImg($data_img);
@@ -816,14 +825,14 @@ class Oasiscron extends JApplicationCli
 
                     $vmProducImagetId = $this->model->getData('#__virtuemart_product_medias', ['id'], [
                         'virtuemart_product_id' => $product_id,
-                        'virtuemart_media_id' => $vmImageId,
+                        'virtuemart_media_id'   => $vmImageId,
                     ]);
 
                     if (is_null($vmProducImagetId)) {
                         $this->model->addData('#__virtuemart_product_medias', [
                             'virtuemart_product_id' => $product_id,
-                            'virtuemart_media_id' => $vmImageId,
-                            'ordering' => ++$key,
+                            'virtuemart_media_id'   => $vmImageId,
+                            'ordering'              => ++$key,
                         ]);
                     }
                 }
@@ -839,8 +848,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
     public function virtuemartProductPrices($product_id, $product)
     {
@@ -848,14 +856,14 @@ class Oasiscron extends JApplicationCli
 
         if (!$vmProductPrice) {
             $data = [
-                'virtuemart_product_id' => $product_id,
-                'product_price' => $product->price,
-                'override' => 0,
+                'virtuemart_product_id'  => $product_id,
+                'product_price'          => $product->price,
+                'override'               => 0,
                 'product_override_price' => '0.00000',
-                'product_tax_id' => 0,
-                'product_discount_id' => 0,
-                'product_currency' => (int)$this->model->getData('#__virtuemart_vendors', ['vendor_currency']),
-                'created_on' => date('Y-m-d H:i:s'),
+                'product_tax_id'         => 0,
+                'product_discount_id'    => 0,
+                'product_currency'       => (int)$this->model->getData('#__virtuemart_vendors', ['vendor_currency']),
+                'created_on'             => date('Y-m-d H:i:s'),
             ];
             $this->model->addData('#__virtuemart_product_prices', $data);
         } else {
@@ -867,73 +875,146 @@ class Oasiscron extends JApplicationCli
     }
 
     /**
-     * @param        $product_id
-     * @param string $related
+     * @return array
      *
-     *
-     * @since 1.0
+     * @since 2.0
      */
-    public function addVirtuemartProductCustomfields($product_id, string $related = '')
+    public function checkVirtuemartCustoms(): array
     {
-        if (!$related) {
-            $vmCustomId = $this->model->getData('#__virtuemart_customs', ['virtuemart_custom_id'], ['custom_value' => 'o_product_child']);
+        $result['string_id'] = $this->model->getData('#__virtuemart_customs', ['virtuemart_custom_id'], ['custom_value' => 'o_string']);
 
-            if (is_null($vmCustomId)) {
-                $dataCustoms = [
-                    'custom_title' => $this->var_size,
-                    'show_title' => 0,
-                    'custom_value' => 'o_product_child',
-                    'custom_desc' => '',
-                    'field_type' => 'A',
-                    'is_cart_attribute' => 1,
-                    'layout_pos' => 'ontop',
-                    'custom_params' => 'withParent="0"|parentOrderable="0"|wPrice="1"|',
-                    'virtuemart_shoppergroup_id' => '',
-                    'created_on' => date('Y-m-d H:i:s'),
-                ];
-                $vmCustomId = $this->model->addData('#__virtuemart_customs', $dataCustoms);
-            }
-
-            $data = [
-                'virtuemart_custom_id' => $vmCustomId,
-                'customfield_value' => 'product_name',
-                'customfield_params' => 'withParent="0"|parentOrderable="0"|',
-            ];
-        } else {
-            $vmOasisProductRelated = $this->model->getData('#__virtuemart_product_customfields', ['*'], [
-                'virtuemart_product_id' => $product_id,
-                'customfield_value' => $related,
+        if (is_null($result['string_id'])) {
+            $result['string_id'] = $this->model->addData('#__virtuemart_customs', [
+                'custom_title'               => 'Строка',
+                'show_title'                 => 0,
+                'custom_value'               => 'o_string',
+                'custom_desc'                => '',
+                'field_type'                 => 'S',
+                'is_cart_attribute'          => 0,
+                'layout_pos'                 => '',
+                'custom_params'              => 'addEmpty="0"|selectType="0"|multiplyPrice="0"|transform=""|product_sku=""|product_gtin=""|product_mpn=""|',
+                'virtuemart_shoppergroup_id' => '',
+                'published'                  => 0,
+                'created_on'                 => date('Y-m-d H:i:s'),
             ]);
-
-            if (!is_null($vmOasisProductRelated)) {
-                return;
-            }
-
-            $data = [
-                'virtuemart_custom_id' => 1,
-                'customfield_value' => $related,
-                'customfield_params' => '',
-            ];
         }
 
+        $result['multi_id'] = $this->model->getData('#__virtuemart_customs', ['virtuemart_custom_id'], ['custom_value' => 'o_multi_variant']);
+
+        if (is_null($result['multi_id'])) {
+
+            $result['multi_id'] = $this->model->addData('#__virtuemart_customs', [
+                'custom_title'               => 'Мультивариант',
+                'show_title'                 => 1,
+                'custom_value'               => 'o_multi_variant',
+                'custom_desc'                => '',
+                'field_type'                 => 'C',
+                'is_cart_attribute'          => 1,
+                'layout_pos'                 => 'addtocart',
+                'custom_params'              => 'usecanonical="1"|showlabels="0"|browseajax="1"|sCustomId="' . $result['string_id'] . '"|selectType="0"|withImage="0"|images="0"|selectoptions="0"|clabels="0"|options="0"|',
+                'virtuemart_shoppergroup_id' => '',
+                'created_on'                 => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param $product_id
+     * @param string $value
+     * @return mixed
+     *
+     * @since 2.0
+     */
+    public function getProductCustomfieldParams($product_id, string $value = '')
+    {
+        $where['virtuemart_product_id'] = $product_id;
+
+        if (!empty($value)) {
+            $where['customfield_value'] = $value;
+        }
+
+        return $this->model->getData('#__virtuemart_product_customfields', ['*'], $where, false, 'loadAssoc');
+    }
+
+    /**
+     * @param $data
+     * @return array
+     *
+     * @since 2.0
+     */
+    public function decodeCustomfieldParams($data): array
+    {
+        $params = explode('|', $data);
+
+        $result = [];
+        foreach ($params as $param) {
+            if (!empty($param)) {
+                $dataParam = explode('=', $param);
+                $result[$dataParam[0]] = json_decode($dataParam[1]);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array $dataParams
+     * @return string
+     *
+     * @since 2.0
+     */
+    public function encodeCustomfieldParams(array $dataParams): string
+    {
+        $result = '';
+
+        foreach ($dataParams as $key => $value) {
+            if (!empty($key)) {
+                $result .= $key . '=' . vmJsApi::safe_json_encode($value) . '|';
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param        $product_id
+     * @param array $data
+     *
+     * @since 2.0
+     */
+    public function addProductCustomfields($product_id, array $data = [])
+    {
         $data += [
+            'virtuemart_custom_id'  => $this->customFields['multi_id'],
+            'customfield_value'     => NULL,
+            'customfield_params'    => '',
             'virtuemart_product_id' => $product_id,
-            'customfield_price' => '0.000000',
-            'published' => '0',
-            'created_on' => date('Y-m-d H:i:s'),
+            'customfield_price'     => NULL,
+            'published'             => 0,
         ];
 
         $this->model->addData('#__virtuemart_product_customfields', $data);
     }
 
     /**
-     * @param     $table
-     * @param     $str
-     * @param int $count
+     * @param $customfield_id
      *
+     * @since 2.0
+     */
+    public function editProductCustomfields($customfield_id)
+    {
+        $this->model->upData('#__virtuemart_product_customfields', ['virtuemart_customfield_id' => (int)$customfield_id], ['has_children' => 1]);
+    }
+
+    /**
+     * @param $table
+     * @param $str
+     * @param int $count
      * @return string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getSlug($table, $str, int $count = 0): string
     {
@@ -959,7 +1040,7 @@ class Oasiscron extends JApplicationCli
      *
      * @return  void.
      *
-     * @since   1.0
+     * @since 2.0
      */
     public function onBeforeExecute()
     {
@@ -973,13 +1054,14 @@ class Oasiscron extends JApplicationCli
     /**
      * Write a string to standard output.
      *
-     * @param string  $text The text to display.
-     * @param boolean $nl   True (default) to append a new line at the end of the output string.
+     * @param string $text The text to display.
+     * @param boolean $nl True (default) to append a new line at the end of the output string.
      *
      * @return  JApplicationCli  Instance of $this to allow chaining.
      *
      * @codeCoverageIgnore
-     * @since   1.0
+     *
+     * @since 2.0
      */
     public function out($text = '', $nl = true)
     {
@@ -994,10 +1076,9 @@ class Oasiscron extends JApplicationCli
 
     /**
      * @param $product_categories
-     *
      * @return array
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getArrCategories($product_categories): array
     {
@@ -1016,24 +1097,23 @@ class Oasiscron extends JApplicationCli
     }
 
     /**
-     * @param $id
-     *
+     * @param $oasisCatId
      * @return bool|int
      *
-     * @since 1.0
+     * @since 2.0
      */
-    public function getVmCategoryId($id)
+    public function getVmCategoryId($oasisCatId)
     {
-        $category = OasisHelper::searchObject($this->categories, $id);
+        $oasisCategory = OasisHelper::searchObject($this->categories, $oasisCatId);
 
-        if (!$category) {
+        if (!$oasisCategory) {
             return false;
         }
 
-        $category_id = $this->model->getCategoryId($category);
+        $category_id = $this->model->getCategoryId($oasisCategory);
 
         if (is_null($category_id)) {
-            $category_id = $this->addCategory($category);
+            $category_id = $this->addCategory($oasisCategory);
         }
 
         return $category_id;
@@ -1041,27 +1121,26 @@ class Oasiscron extends JApplicationCli
 
     /**
      * @param $category
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addCategory($category): int
     {
         $data = [
-            'category_parent_id' => 0,
-            'category_template' => '',
-            'category_layout' => '',
+            'category_parent_id'      => 0,
+            'category_template'       => '',
+            'category_layout'         => '',
             'category_product_layout' => '',
-            'limit_list_step' => 0,
-            'limit_list_initial' => 0,
-            'products_per_row' => '',
-            'cat_params' => 'show_store_desc=""|showcategory_desc=""|showcategory=""|categories_per_row=""|showproducts=""|omitLoaded=""|showsearch=""|productsublayout=""|featured=""|featured_rows=""|omitLoaded_featured=""|discontinued=""|discontinued_rows=""|omitLoaded_discontinued=""|latest=""|latest_rows=""|omitLoaded_latest=""|topten=""|topten_rows=""|omitLoaded_topten=""|recent=""|recent_rows=""|omitLoaded_recent=""|',
-            'metarobot' => '',
-            'metaauthor' => '',
-            'has_children' => 0,
-            'has_medias' => 1,
-            'created_on' => date('Y-m-d H:i:s'),
+            'limit_list_step'         => 0,
+            'limit_list_initial'      => 0,
+            'products_per_row'        => '',
+            'cat_params'              => 'show_store_desc=""|showcategory_desc=""|showcategory=""|categories_per_row=""|showproducts=""|omitLoaded=""|showsearch=""|productsublayout=""|featured=""|featured_rows=""|omitLoaded_featured=""|discontinued=""|discontinued_rows=""|omitLoaded_discontinued=""|latest=""|latest_rows=""|omitLoaded_latest=""|topten=""|topten_rows=""|omitLoaded_topten=""|recent=""|recent_rows=""|omitLoaded_recent=""|oasis_id="' . $category->id . '"|',
+            'metarobot'               => '',
+            'metaauthor'              => '',
+            'has_children'            => 0,
+            'has_medias'              => 1,
+            'created_on'              => date('Y-m-d H:i:s'),
         ];
 
         if (!is_null($category->parent_id)) {
@@ -1081,12 +1160,12 @@ class Oasiscron extends JApplicationCli
 
         $data_cat_lang = [
             'virtuemart_category_id' => $category_id,
-            'category_name' => $category->name,
-            'category_description' => '',
-            'metadesc' => '',
-            'metakey' => '',
-            'customtitle' => '',
-            'slug' => $category->slug,
+            'category_name'          => $category->name,
+            'category_description'   => '',
+            'metadesc'               => '',
+            'metakey'                => '',
+            'customtitle'            => '',
+            'slug'                   => $this->getSlug('#__virtuemart_categories', $category->slug),
         ];
 
         // insert into table #__virtuemart_categories_ru_ru (ru_ru - default lang virtuemart)
@@ -1094,8 +1173,8 @@ class Oasiscron extends JApplicationCli
 
         $data_cat_categories = [
             'category_parent_id' => $data['category_parent_id'],
-            'category_child_id' => $category_id,
-            'ordering' => 0,
+            'category_child_id'  => $category_id,
+            'ordering'           => 0,
         ];
 
         // insert into table #__virtuemart_category_categories
@@ -1106,10 +1185,9 @@ class Oasiscron extends JApplicationCli
 
     /**
      * @param $brand_id
-     *
      * @return int
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function addBrand($brand_id)
     {
@@ -1124,18 +1202,8 @@ class Oasiscron extends JApplicationCli
 }
 
 try {
-    JApplicationCli::getInstance('Oasiscron')
-        ->execute();
+    JApplicationCli::getInstance('Oasiscron')->execute();
 } catch (Exception $e) {
-
-    echo $e->getMessage() . "\r\n";
-
+    echo $e->getMessage() . PHP_EOL;
     exit($e->getCode());
-}
-
-function d($data)
-{
-    echo "\r\n";
-    print_r($data);
-    echo "\r\n";
 }

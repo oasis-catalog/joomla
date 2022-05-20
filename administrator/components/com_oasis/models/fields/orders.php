@@ -16,9 +16,9 @@ use Joomla\CMS\Form\FormField;
 require_once JPATH_ROOT . '/administrator/components/com_oasis/models/oasis.php';
 
 /**
- * Класс JFormFieldOrders компонента Oasis.
+ * Class JFormFieldOrders component Oasis.
  *
- * @since 1.0
+ * @since 2.0
  */
 class JFormFieldOrders extends FormField
 {
@@ -26,13 +26,15 @@ class JFormFieldOrders extends FormField
      * Model class
      *
      * @var    null
-     * @since  1.0
+     *
+     * @since 2.0
      */
     private $model = null;
 
     /**
      * @var string
-     * @since 1.0
+     *
+     * @since 2.0
      */
     protected $type = 'Orders';
 
@@ -41,7 +43,7 @@ class JFormFieldOrders extends FormField
      *
      * @param null $form
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function __construct($form = null)
     {
@@ -51,10 +53,9 @@ class JFormFieldOrders extends FormField
     }
 
     /**
-     *
      * @return string
      *
-     * @since 1.0
+     * @since 2.0
      */
     public function getInput(): string
     {
@@ -88,7 +89,7 @@ class JFormFieldOrders extends FormField
             $oasisOrder = [
                 'status' => JText::_('COM_OASIS_ORDER_NOT_UPLOAD'),
                 'number' => JText::_('COM_OASIS_ORDER_NOT_UPLOAD'),
-                'btn' => '
+                'btn'    => '
                 <input id="order-' . $order['virtuemart_order_id'] . '" type="hidden" name="order-' . $order['virtuemart_order_id'] . '" value="' . $order['virtuemart_order_id'] . '" />
                 <button id="btn-' . $order['virtuemart_order_id'] . '" type="button" class="btn btn-small button-apply btn-primary" onclick="sendHere(' . $order['virtuemart_order_id'] . ')" data-complete-text=\'<span class="icon-publish icon-white" aria-hidden="true"></span>\'><span class="icon-upload icon-white" aria-hidden="true"></span></button>',
             ];
