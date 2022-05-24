@@ -12,6 +12,10 @@
 		<field name="oasis_warehouse_moscow" type="hidden" default=""/>
 		<field name="oasis_warehouse_europe" type="hidden" default=""/>
 		<field name="oasis_remote_warehouse" type="hidden" default=""/>
+		<field name="oasis_limit" type="hidden" default=""/>
+		<field name="oasis_factor" type="hidden" default=""/>
+		<field name="oasis_increase" type="hidden" default=""/>
+		<field name="oasis_dealer" type="hidden" default=""/>
 		<field name="oasis_host" type="hidden" default=""/>
 	</fieldset>
 </config>

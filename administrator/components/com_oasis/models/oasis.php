@@ -104,6 +104,10 @@ class OasisModelOasis extends JModelAdmin
             'oasis_warehouse_moscow' => $params->get('oasis_warehouse_moscow'),
             'oasis_warehouse_europe' => $params->get('oasis_warehouse_europe'),
             'oasis_remote_warehouse' => $params->get('oasis_remote_warehouse'),
+            'oasis_limit'            => $params->get('oasis_limit'),
+            'oasis_factor'           => $params->get('oasis_factor'),
+            'oasis_increase'         => $params->get('oasis_increase'),
+            'oasis_dealer'           => $params->get('oasis_dealer'),
             'oasis_categories'       => $params->get('oasis_categories'),
         ];
 
@@ -118,7 +122,23 @@ class OasisModelOasis extends JModelAdmin
      */
     public function getCategoryId($category)
     {
-        return $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['cat_params' => 'oasis_id="' . $category->id . '"'], false, '' , 'LIKE');
+        return $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['cat_params' => 'oasis_id="' . $category->id . '"'], false, '', 'LIKE');
+    }
+
+    /**
+     * @param $params
+     *
+     * @since 2.0
+     */
+    public function editOasisStep($params)
+    {
+        $query = $this->db->getQuery(true);
+        $query->update($this->db->quoteName('#__extensions'));
+        $query->set($this->db->quoteName('params') . ' = ' . $this->db->quote((string)$params));
+        $query->where($this->db->quoteName('element') . ' = ' . $this->db->quote('com_oasis'));
+        $query->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'));
+        $this->db->setQuery($query);
+        $this->db->execute();
     }
 
     /**

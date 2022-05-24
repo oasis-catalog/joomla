@@ -38,6 +38,11 @@ class OasisControllerOasis extends JControllerLegacy
         $data['oasis_warehouse_moscow'] = $_POST['jform']['oasis_warehouse_moscow'] ?? '';
         $data['oasis_warehouse_europe'] = $_POST['jform']['oasis_warehouse_europe'] ?? '';
         $data['oasis_remote_warehouse'] = $_POST['jform']['oasis_remote_warehouse'] ?? '';
+        $data['oasis_limit'] = $_POST['jform']['oasis_limit'] ?? '';
+        $data['oasis_factor'] = $_POST['jform']['oasis_factor'] ?? '';
+        $data['oasis_increase'] = $_POST['jform']['oasis_increase'] ?? '';
+        $data['oasis_dealer'] = $_POST['jform']['oasis_dealer'] ?? '';
+        $data['oasis_step'] = $_POST['jform']['oasis_step'] ?? '';
         $data['oasis_categories'] = $_POST['jform']['oasis_categories'] ?? [];
         $data['oasis_host'] = $_POST['jform']['oasis_host'] ?? '';
 

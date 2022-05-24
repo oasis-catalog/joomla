@@ -84,7 +84,7 @@ class Oasiscron extends JApplicationCli
      * Settings class
      *
      * @var    OasisHelperSettings
-     * 
+     *
      * @since 2.0
      */
     private $settings = null;
@@ -144,6 +144,33 @@ class Oasiscron extends JApplicationCli
     private $customFields = null;
 
     /**
+     * Price factor
+     *
+     * @var null
+     *
+     * @since 2.0
+     */
+    private $priceFactor = null;
+
+    /**
+     * Price increase
+     *
+     * @var null
+     *
+     * @since 2.0
+     */
+    private $priceIncrease = null;
+
+    /**
+     * Price dealer
+     *
+     * @var null
+     *
+     * @since 2.0
+     */
+    private $priceDealer = null;
+
+    /**
      * Class constructor.
      *
      * @param JInputCli $input An optional argument to provide dependency injection for the application's
@@ -164,6 +191,12 @@ class Oasiscron extends JApplicationCli
 
     public function __construct(JInputCli $input = null, Registry $config = null, JEventDispatcher $dispatcher = null)
     {
+        $version_php = intval( PHP_MAJOR_VERSION . PHP_MINOR_VERSION );
+
+        if ( $version_php < 73 ) {
+            die( 'Error! Minimum PHP version 7.3, your PHP version ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION );
+        }
+
         if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
             echo 'You are not supposed to access this script from the web. You have to run it from the command line. ' .
                 'If you don\'t understand what this means, you must not try to use this file before reading the ' .
@@ -254,8 +287,28 @@ class Oasiscron extends JApplicationCli
                 $start_time = microtime(true);
 
                 if ($up === '') {
+                    $args = [];
+                    $params = JComponentHelper::getParams('com_oasis');
+                    $this->priceFactor = (float)$params->get('oasis_factor');
+                    $this->priceIncrease = (float)$params->get('oasis_increase');
+                    $this->priceDealer = (int)$params->get('oasis_dealer');
+                    $limit = (int)$params->get('oasis_limit');
+                    $step = (int)$params->get('oasis_step');
+
+                    if ($limit > 0) {
+                        $args['limit'] = $limit;
+                        $args['offset'] = $step * $limit;
+                    }
+
                     $this->categories = OasisHelper::getOasisCategories();
-                    $this->products = OasisHelper::getOasisProducts();
+                    $this->products = OasisHelper::getOasisProducts($args);
+
+                    if ($this->products) {
+                        $nextStep = ++$step;
+                    } else {
+                        $nextStep = 0;
+                    }
+
                     $this->manufacturers = OasisHelper::getOasisManufacturers();
                     $this->customFields = $this->checkVirtuemartCustoms();
 
@@ -319,6 +372,11 @@ class Oasiscron extends JApplicationCli
                                 }
                             }
                         }
+                    }
+
+                    if (!empty($limit)) {
+                        $params->set('oasis_step', $nextStep);
+                        $this->model->editOasisStep($params);
                     }
 
                     $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
@@ -854,10 +912,20 @@ class Oasiscron extends JApplicationCli
     {
         $vmProductPrice = $this->model->getData('#__virtuemart_product_prices', ['*'], ['virtuemart_product_id' => $product_id], false, 'loadAssocList');
 
+        $price = !empty($this->priceDealer) ? $product->discount_price : $product->price;
+
+        if (!empty($this->priceFactor)) {
+            $price = $price * $this->priceFactor;
+        }
+
+        if (!empty($this->priceIncrease)) {
+            $price = $price + $this->priceIncrease;
+        }
+
         if (!$vmProductPrice) {
             $data = [
                 'virtuemart_product_id'  => $product_id,
-                'product_price'          => $product->price,
+                'product_price'          => $price,
                 'override'               => 0,
                 'product_override_price' => '0.00000',
                 'product_tax_id'         => 0,
@@ -868,7 +936,7 @@ class Oasiscron extends JApplicationCli
             $this->model->addData('#__virtuemart_product_prices', $data);
         } else {
             foreach ($vmProductPrice as $item) {
-                $item['product_price'] = $product->price;
+                $item['product_price'] = $price;
                 $this->model->upData('#__virtuemart_product_prices', ['virtuemart_product_id' => $product_id], $item);
             }
         }

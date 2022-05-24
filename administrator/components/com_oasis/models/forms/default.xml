@@ -12,8 +12,8 @@
         </field>
         <field name="oasis_no_vat" type="checkbox" label="Без НДС" description="Загрузка товаров без НДС" value="1"/>
         <field name="oasis_not_on_order" type="checkbox" label="Под заказ" description="Без товаров (под заказ)" value="1"/>
-        <field name="oasis_price_from" type="text" label="Цена от" description="Загружать товары с ценой от"/>
-        <field name="oasis_price_to" type="text" label="Цена до" description="Загружать товары с ценой до"/>
+        <field name="oasis_price_from" type="number" label="Цена от" description="Загружать товары с ценой от"/>
+        <field name="oasis_price_to" type="number" label="Цена до" description="Загружать товары с ценой до"/>
         <field name="oasis_rating" type="list" label="Тип" description="Типы товаров">
             <option>-</option>
             <option value="1">Только новинки</option>
@@ -23,6 +23,10 @@
         <field name="oasis_warehouse_moscow" type="checkbox" label="На складе в Москве" description="Загружть товары на складе в Москве" value="1"/>
         <field name="oasis_warehouse_europe" type="checkbox" label="На складе в Европе" description="Загружть товары на складе в Европе" value="1"/>
         <field name="oasis_remote_warehouse" type="checkbox" label="На удаленном складе" description="Загружть товары на удаленном складе" value="1"/>
+        <field name="oasis_limit" type="number" label="Лимит" description="Лимит единовременной загрузки товаров"/>
+        <field name="oasis_factor" type="number" step="0.01" label="Коэффициент цены" description="Коэффициент на который будет умножена базовая цена"/>
+        <field name="oasis_increase" type="number" step="0.01" label="Надбавка к цене" description="Надбавка которая будет добавленая к базовой цене"/>
+        <field name="oasis_dealer" type="checkbox" label="Использовать диллерские цены" description="Использовать в качестве базовой цены диллерские цены"/>
         <field name="oasis_categories" type="treecheckbox" label="Категории" description="Дерево категорий"/>
     </fieldset>
     <fieldset name="orders" label="COM_OASIS_ORDER" addfieldpath="/administrator/components/com_oasis/models/fields">

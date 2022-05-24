@@ -24,7 +24,7 @@ $jinput = JFactory::getApplication()->input;
 jimport('joomla.application.component.controller');
 
 // Define our version number
-define('OASIS_VERSION', '1.0');
+define('OASIS_VERSION', '2.0');
 
 // Set CLI mode
 define('OASIS_CLI', false);
