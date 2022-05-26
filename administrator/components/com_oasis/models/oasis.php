@@ -206,6 +206,8 @@ class OasisModelOasis extends JModelAdmin
     }
 
     /**
+     * Insert into table #__virtuemart_medias
+     *
      * @param        $img
      * @param string $file_type
      * @return int

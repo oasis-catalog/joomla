@@ -18,17 +18,17 @@ use Joomla\Registry\Registry;
  * /usr/local/bin/php /path/to/site/administrator/components/com_oasis/helper/cron.php --key= --up
  */
 
-define('_JEXEC', 1);
+const _JEXEC = 1;
 
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 ini_set('display_errors', 1);
 
-if (file_exists(dirname(dirname(dirname(dirname(__DIR__)))) . '/defines.php')) {
-    require_once dirname(dirname(dirname(dirname(__DIR__)))) . '/defines.php';
+if (file_exists(dirname(__DIR__, 4) . '/defines.php')) {
+    require_once dirname(__DIR__, 4) . '/defines.php';
 }
 
 if (!defined('_JDEFINES')) {
-    define('JPATH_BASE', dirname(dirname(dirname(__DIR__))));
+    define('JPATH_BASE', dirname(__DIR__, 3));
     require_once JPATH_BASE . '/includes/defines.php';
 }
 
@@ -54,11 +54,11 @@ jimport('joomla.filesystem.path');
 JFactory::getApplication('administrator');
 JFactory::getApplication()->input->set('option', 'com_oasis');
 
-define('JPATH_COMPONENT', JPATH_ROOT . '/components/com_oasis');
-define('JPATH_COMPONENT_SITE', JPATH_ROOT . '/components/com_oasis');
-define('JPATH_COMPONENT_ADMINISTRATOR', JPATH_ADMINISTRATOR . '/components/com_oasis');
+const JPATH_COMPONENT = JPATH_ROOT . '/components/com_oasis';
+const JPATH_COMPONENT_SITE = JPATH_ROOT . '/components/com_oasis';
+const JPATH_COMPONENT_ADMINISTRATOR = JPATH_ADMINISTRATOR . '/components/com_oasis';
 
-define('OASIS_VERSION', '2.0');
+const OASIS_VERSION = '2.0';
 
 $config = JFactory::getConfig();
 
@@ -173,28 +173,18 @@ class Oasiscron extends JApplicationCli
     /**
      * Class constructor.
      *
-     * @param JInputCli $input An optional argument to provide dependency injection for the application's
-     *                                         input object.  If the argument is a JInputCli object that object will become
-     *                                         the application's input object, otherwise a default input object is created.
-     * @param Registry $config An optional argument to provide dependency injection for the application's
-     *                                         config object.  If the argument is a Registry object that object will become
-     *                                         the application's config object, otherwise a default config object is created.
-     * @param JEventDispatcher $dispatcher An optional argument to provide dependency injection for the application's
-     *                                         event dispatcher.  If the argument is a JEventDispatcher object that object will become
-     *                                         the application's event dispatcher, if it is null then the default event dispatcher
-     *                                         will be created based on the application's loadDispatcher() method.
-     *
-     * @see     JApplicationBase::loadDispatcher()
+     * @param \JInputCli|null $input
+     * @param \Joomla\Registry\Registry|null $config
+     * @param \JEventDispatcher|null $dispatcher
      *
      * @since 2.0
      */
-
     public function __construct(JInputCli $input = null, Registry $config = null, JEventDispatcher $dispatcher = null)
     {
-        $version_php = intval( PHP_MAJOR_VERSION . PHP_MINOR_VERSION );
+        $version_php = intval(PHP_MAJOR_VERSION . PHP_MINOR_VERSION);
 
-        if ( $version_php < 73 ) {
-            die( 'Error! Minimum PHP version 7.3, your PHP version ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION );
+        if ($version_php < 73) {
+            die('Error! Minimum PHP version 7.3, your PHP version ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION);
         }
 
         if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
@@ -256,9 +246,6 @@ class Oasiscron extends JApplicationCli
 
     /**
      * Entry point for the script
-     *
-     * @return  void
-     * @throws  OasisException
      *
      * @since 2.0
      */
@@ -441,7 +428,7 @@ class Oasiscron extends JApplicationCli
         $this->virtuemartProductManufacturers($product_id, $product);
 
         // images
-        $this->addVirtuemartProductMedias($product_id, $product);
+        $this->processingProductMedias($product_id, $product);
 
         // prices
         $this->virtuemartProductPrices($product_id, $product);
@@ -509,16 +496,16 @@ class Oasiscron extends JApplicationCli
 
         $product_id = $this->addVirtuemartProducts($product, $dataProducts);
 
-        // add table oasis product
-        $this->oasisProduct($product_id, $product);
-
         // images
-        $this->addVirtuemartProductMedias($product_id, $product);
+        $this->processingProductMedias($product_id, $product, true);
 
         // add product in table default lang virtuemart
         $this->virtuemartProductsLang($product_id, $product, true);
         $this->virtuemartProductPrices($product_id, $product);
         $this->addСhildProductCustomFields($parent_id, $product_id, $product);
+
+        // add table oasis product
+        $this->oasisProduct($product_id, $product);
 
         return $product_id;
     }
@@ -633,6 +620,7 @@ class Oasiscron extends JApplicationCli
         $data = [
             'product_id_oasis'     => $product->id,
             'group_id'             => $product->group_id,
+            'color_group_id'       => $product->color_group_id,
             'rating'               => $product->rating,
             'option_date_modified' => date('Y-m-d H:i:s'),
             'product_id'           => $product_id,
@@ -853,49 +841,95 @@ class Oasiscron extends JApplicationCli
     }
 
     /**
-     * Add images
-     * Insert into table #__virtuemart_medias
-     * Insert into table #__virtuemart_product_medias
+     * Processing product images
      *
      * @param $product_id
      * @param $product
+     * @param false $isChild
      *
      * @since 2.0
      */
-    public function addVirtuemartProductMedias($product_id, $product)
+    public function processingProductMedias($product_id, $product, bool $isChild = false)
     {
         if (is_array($product->images)) {
             foreach ($product->images as $key => $image) {
                 if (isset($image->superbig)) {
                     $vmImageId = $this->model->getData('#__virtuemart_medias', ['virtuemart_media_id'], ['file_title' => pathinfo($image->superbig)['filename']]);
+
                     if (is_null($vmImageId)) {
-                        $data_img = [
-                            'folder_name' => 'images/virtuemart/product/oasis',
-                            'img_url'     => $image->superbig,
-                        ];
+                        if ($isChild) {
+                            $existParentProductId = $this->model->getData('#__oasis_product', ['product_id'], ['color_group_id' => $product->color_group_id]);
 
-                        $img = OasisHelper::saveImg($data_img);
+                            if (!empty($existParentProductId)) {
+                                $vmMediaIds = $this->model->getData('#__virtuemart_product_medias', ['virtuemart_media_id'], ['virtuemart_product_id' => $existParentProductId], false, 'loadAssocList');
 
-                        if ($img) {
-                            $vmImageId = $this->model->addVirtuemartMedias($img);
+                                if ($vmMediaIds) {
+                                    foreach ($vmMediaIds as $vmMediaId) {
+                                        $this->addVirtuemartProductMedia($product_id, $vmMediaId['virtuemart_media_id'], ++$key);
+                                    }
+                                    break;
+                                }
+                            }
                         }
+
+                        $vmImageId = $this->saveProductImage($image);
                     }
 
-                    $vmProducImagetId = $this->model->getData('#__virtuemart_product_medias', ['id'], [
-                        'virtuemart_product_id' => $product_id,
-                        'virtuemart_media_id'   => $vmImageId,
-                    ]);
-
-                    if (is_null($vmProducImagetId)) {
-                        $this->model->addData('#__virtuemart_product_medias', [
-                            'virtuemart_product_id' => $product_id,
-                            'virtuemart_media_id'   => $vmImageId,
-                            'ordering'              => ++$key,
-                        ]);
-                    }
+                    $this->addVirtuemartProductMedia($product_id, $vmImageId, ++$key);
                 }
             }
             unset($key, $image, $vmImageId);
+        }
+    }
+
+    /**
+     * Save image
+     *
+     * @param $image
+     * @return int|null
+     *
+     * @since 2.0
+     */
+    public function saveProductImage($image): ?int
+    {
+        $vmImageId = NULL;
+        $data_img = [
+            'folder_name' => 'images/virtuemart/product/oasis',
+            'img_url'     => $image->superbig,
+        ];
+
+        $img = OasisHelper::saveImg($data_img);
+
+        if ($img) {
+            $vmImageId = $this->model->addVirtuemartMedias($img);
+        }
+
+        return $vmImageId;
+    }
+
+    /**
+     * Add image
+     * Insert into table #__virtuemart_product_medias
+     *
+     * @param $product_id
+     * @param $vmImageId
+     * @param $ordering
+     *
+     * @since 2.0
+     */
+    public function addVirtuemartProductMedia($product_id, $vmImageId, $ordering)
+    {
+        $vmProducImagetId = $this->model->getData('#__virtuemart_product_medias', ['id'], [
+            'virtuemart_product_id' => $product_id,
+            'virtuemart_media_id'   => $vmImageId,
+        ]);
+
+        if (is_null($vmProducImagetId)) {
+            $this->model->addData('#__virtuemart_product_medias', [
+                'virtuemart_product_id' => $product_id,
+                'virtuemart_media_id'   => $vmImageId,
+                'ordering'              => $ordering,
+            ]);
         }
     }
 

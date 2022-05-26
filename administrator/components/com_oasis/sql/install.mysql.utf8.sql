@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `#__oasis_product`
 (
     `product_id_oasis`      CHAR(12)        NOT NULL,
     `group_id`              CHAR(12)        NOT NULL,
+    `color_group_id`        CHAR(12)        NOT NULL,
     `rating`                TINYINT(1)      NOT NULL,
     `option_date_modified`  DATETIME        NOT NULL,
     `product_id`            INT(11)         NOT NULL,

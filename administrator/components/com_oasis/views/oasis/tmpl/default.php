@@ -186,7 +186,7 @@ $cron_key = md5(JComponentHelper::getParams('com_oasis')->get('oasis_api_key'));
     </div>
 </div>
 <div class="span10 center">
-    <a href="https://www.oasiscatalog.com/" target="_blank">Oasis</a> 1.0 | Copyright (C) <?php echo date('Y'); ?>
+    <a href="https://www.oasiscatalog.com/" target="_blank">Oasis</a> 2.0 | Copyright (C) <?php echo date('Y'); ?>
 </div>
 
 <script type="text/javascript">
