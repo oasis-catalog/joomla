@@ -1,6 +1,14 @@
 # Компонент Oasis для Joomla + VirtueMart
 
-Компонент импорта товаров из [oasiscatalog.com](https://www.oasiscatalog.com/) в cms Joomla 3.10.8 + VirtueMart 4.0.0
+Компонент импорта товаров из [oasiscatalog.com](https://www.oasiscatalog.com/) в cms Joomla + VirtueMart
+
+## Требования
+
+PHP 7.4+
+
+Joomla 3.10.8
+
+VirtueMart 4.0.0
 
 ## Как установить
 
