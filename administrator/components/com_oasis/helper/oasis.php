@@ -244,7 +244,16 @@ final class OasisHelper
         $img = OasisHelper::imgFolder($data['folder_name']) . $data['img_name'] . $postfix . '.' . $ext['extension'];
 
         if (!file_exists($img)) {
-            $pic = file_get_contents($data['img_url'], true, stream_context_create(['http' => ['ignore_errors' => true, 'follow_location' => true]]));
+            $pic = file_get_contents($data['img_url'], true, stream_context_create([
+                'http' => [
+                    'ignore_errors'   => true,
+                    'follow_location' => true
+                ],
+                'ssl'  => [
+                    'verify_peer'      => false,
+                    'verify_peer_name' => false,
+                ],
+            ]));
 
             if (!preg_match("/200|301/", $http_response_header[0])) {
                 return false;
