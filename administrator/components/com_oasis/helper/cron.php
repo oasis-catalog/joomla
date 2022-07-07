@@ -1237,7 +1237,7 @@ class Oasiscron extends JApplicationCli
             'limit_list_step'         => 0,
             'limit_list_initial'      => 0,
             'products_per_row'        => '',
-            'cat_params'              => 'show_store_desc=""|showcategory_desc=""|showcategory=""|categories_per_row=""|showproducts=""|omitLoaded=""|showsearch=""|productsublayout=""|featured=""|featured_rows=""|omitLoaded_featured=""|discontinued=""|discontinued_rows=""|omitLoaded_discontinued=""|latest=""|latest_rows=""|omitLoaded_latest=""|topten=""|topten_rows=""|omitLoaded_topten=""|recent=""|recent_rows=""|omitLoaded_recent=""|oasis_id="' . $category->id . '"|',
+            'cat_params'              => 'show_store_desc=""|showcategory_desc=""|showcategory=""|categories_per_row=""|showproducts=""|omitLoaded=""|showsearch=""|productsublayout=""|featured=""|featured_rows=""|omitLoaded_featured=""|discontinued=""|discontinued_rows=""|omitLoaded_discontinued=""|latest=""|latest_rows=""|omitLoaded_latest=""|topten=""|topten_rows=""|omitLoaded_topten=""|recent=""|recent_rows=""|omitLoaded_recent=""|',
             'metarobot'               => '',
             'metaauthor'              => '',
             'has_children'            => 0,
@@ -1259,6 +1259,10 @@ class Oasiscron extends JApplicationCli
 
         // insert into table #__virtuemart_categories
         $category_id = $this->model->addData('#__virtuemart_categories', $data);
+        $this->model->addData('#__oasis_categories', [
+            'category_id_oasis' => $category->id,
+            'category_id'       => $category_id,
+        ]);
 
         $data_cat_lang = [
             'virtuemart_category_id' => $category_id,

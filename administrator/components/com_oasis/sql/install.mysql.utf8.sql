@@ -22,3 +22,13 @@ CREATE TABLE IF NOT EXISTS `#__oasis_product`
     ENGINE = MyISAM
     DEFAULT CHARSET = utf8
     DEFAULT COLLATE = utf8_general_ci;
+
+CREATE TABLE IF NOT EXISTS `#__oasis_categories`
+(
+    `category_id_oasis`     CHAR(12)        NOT NULL,
+    `category_id`           CHAR(12)        NOT NULL,
+    PRIMARY KEY (`category_id_oasis`)
+    )
+    ENGINE = MyISAM
+    DEFAULT CHARSET = utf8
+    DEFAULT COLLATE = utf8_general_ci;

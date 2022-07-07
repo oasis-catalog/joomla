@@ -122,7 +122,18 @@ class OasisModelOasis extends JModelAdmin
      */
     public function getCategoryId($category)
     {
-        return $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['cat_params' => 'oasis_id="' . $category->id . '"'], false, '', 'LIKE');
+        $result = null;
+        $oaCat = $this->getData('#__oasis_categories', ['category_id'], ['category_id_oasis' => $category->id]);
+
+        if (!empty($oaCat)) {
+            $result = $this->getData('#__virtuemart_categories', ['virtuemart_category_id'], ['virtuemart_category_id' => $oaCat]);
+
+            if (empty($result)) {
+                $this->deleteData('#__oasis_categories', ['category_id_oasis' => $category->id]);
+            }
+        }
+
+        return $result;
     }
 
     /**
