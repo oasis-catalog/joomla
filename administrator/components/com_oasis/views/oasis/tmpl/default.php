@@ -167,7 +167,7 @@ $cron_key = md5(JComponentHelper::getParams('com_oasis')->get('oasis_api_key'));
                             <div class="span12">
                                 <?php foreach ($this->form->getFieldset($name) as $field) { ?>
                                     <div class="control-group">
-                                        <?php echo !empty($field->input) ? $field->input : ''; ?>
+                                        <?php echo $field->input; ?>
                                     </div>
                                 <?php } ?>
                             </div>
