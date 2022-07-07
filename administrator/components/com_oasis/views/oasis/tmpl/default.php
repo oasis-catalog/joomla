@@ -20,7 +20,7 @@ defined('_JEXEC') or die;
     .tree-select label {
         position: relative;
         display: block;
-        padding: 0 0 0 1.2em;
+        padding: 0 0 0 1.2em !important;
         margin: 0;
     }
 
