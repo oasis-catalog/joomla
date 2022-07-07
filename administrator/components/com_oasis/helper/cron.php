@@ -549,13 +549,13 @@ class Oasiscron extends JApplicationCli
 
         foreach ($product->attributes as $attribute) {
             if (isset($attribute->id) && $attribute->id === 1000000001) {
-                $data['Цвет'] = $attribute->value;
+                $data['Цвет'] = htmlspecialchars($attribute->value, ENT_QUOTES);
             }
         }
         unset($attribute);
 
         if (!empty($product->size)) {
-            $data['Размер'] = $product->size;
+            $data['Размер'] = htmlspecialchars($product->size, ENT_QUOTES);
         }
 
         $parentCustomFields = $this->getProductCustomfieldParams($parent_id);
