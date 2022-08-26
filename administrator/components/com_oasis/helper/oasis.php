@@ -68,7 +68,7 @@ final class OasisHelper
      * @param array $args
      * @return mixed
      *
-     * @since 2.0
+     * @since 2.2
      */
     public static function getOasisProducts(array $args = [])
     {
@@ -118,7 +118,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 2.2
      */
     public static function getOasisStat()
     {
@@ -156,7 +156,7 @@ final class OasisHelper
      *
      * @return array
      *
-     * @since 2.0
+     * @since 2.2
      */
     public static function getOasisMainCategories(): array
     {

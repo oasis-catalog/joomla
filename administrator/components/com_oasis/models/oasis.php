@@ -139,7 +139,7 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param $params
      *
-     * @since 2.0
+     * @since 2.2
      */
     public function editOasisParams($params)
     {
@@ -155,7 +155,7 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param $limit
      *
-     * @since 2.0
+     * @since 2.2
      */
     public function editOasisProgress($limit)
     {

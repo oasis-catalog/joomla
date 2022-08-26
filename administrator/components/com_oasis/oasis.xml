@@ -7,7 +7,7 @@
 	<authorUrl>https://www.oasiscatalog.com/</authorUrl>
 	<copyright>Copyright (C) 2021 Oasiscatalog. All rights reserved.</copyright>
 	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
-	<version>2.0</version>
+	<version>2.2</version>
 	<description>COM_OASIS_XML_DESCRIPTION</description>
 	<scriptfile>script.php</scriptfile>
 	<install>

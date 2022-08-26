@@ -94,7 +94,7 @@ class OasisViewOasis extends JViewLegacy
     }
 
     /**
-     * @since 2.0
+     * @since 2.2
      */
     private function setDocument()
     {

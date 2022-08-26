@@ -247,7 +247,7 @@ class Oasiscron extends JApplicationCli
     /**
      * Entry point for the script
      *
-     * @since 2.0
+     * @since 2.2
      */
     public function doExecute()
     {

@@ -157,7 +157,7 @@ if (!empty($progressStepTotal) && !empty($progressStepItem)) {
     </div>
 </div>
 <div class="span10 center">
-    <a href="https://www.oasiscatalog.com/" target="_blank">Oasis</a> 2.0 | Copyright (C) <?php echo date('Y'); ?>
+    <a href="https://www.oasiscatalog.com/" target="_blank">Oasis</a> 2.2 | Copyright (C) <?php echo date('Y'); ?>
 </div>
 
 <script type="text/javascript">
