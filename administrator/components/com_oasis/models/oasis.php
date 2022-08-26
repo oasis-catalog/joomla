@@ -141,7 +141,7 @@ class OasisModelOasis extends JModelAdmin
      *
      * @since 2.0
      */
-    public function editOasisStep($params)
+    public function editOasisParams($params)
     {
         $query = $this->db->getQuery(true);
         $query->update($this->db->quoteName('#__extensions'));
@@ -150,6 +150,26 @@ class OasisModelOasis extends JModelAdmin
         $query->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'));
         $this->db->setQuery($query);
         $this->db->execute();
+    }
+
+    /**
+     * @param $limit
+     *
+     * @since 2.0
+     */
+    public function editOasisProgress($limit)
+    {
+        $params = JComponentHelper::getParams('com_oasis');
+
+        $progress_item = $params->get('progress_item');
+        $params->set('progress_item', ++$progress_item);
+
+        if (!empty($limit)) {
+            $progress_step_item = $params->get('progress_step_item');
+            $params->set('progress_step_item', ++$progress_step_item);
+        }
+
+        $this->editOasisParams($params);
     }
 
     /**

@@ -77,15 +77,15 @@ final class OasisHelper
         $args['fieldset'] = 'full';
 
         $data = [
-            'currency'         => $params->get('oasis_currency'),
-            'no_vat'           => $params->get('oasis_no_vat'),
-            'not_on_order'     => $params->get('oasis_not_on_order'),
-            'price_from'       => $params->get('oasis_price_from'),
-            'price_to'         => $params->get('oasis_price_to'),
-            'rating'           => $params->get('oasis_rating'),
-            'warehouse_moscow' => $params->get('oasis_warehouse_moscow'),
-            'warehouse_europe' => $params->get('oasis_warehouse_europe'),
-            'remote_warehouse' => $params->get('oasis_remote_warehouse'),
+            'currency'     => $params->get('oasis_currency'),
+            'no_vat'       => $params->get('oasis_no_vat'),
+            'not_on_order' => $params->get('oasis_not_on_order'),
+            'price_from'   => $params->get('oasis_price_from'),
+            'price_to'     => $params->get('oasis_price_to'),
+            'rating'       => $params->get('oasis_rating'),
+            'moscow'       => $params->get('oasis_warehouse_moscow'),
+            'europe'       => $params->get('oasis_warehouse_europe'),
+            'remote'       => $params->get('oasis_remote_warehouse'),
         ];
 
         $category = $params->get('oasis_categories');
@@ -111,6 +111,65 @@ final class OasisHelper
         }
 
         return OasisHelper::curlQuery('v4/', 'products', $args);
+    }
+
+    /**
+     * Get stat oasis
+     *
+     * @return false|mixed
+     *
+     * @since 2.0
+     */
+    public static function getOasisStat()
+    {
+        $params = JComponentHelper::getParams('com_oasis');
+
+        $data = [
+            'not_on_order' => $params->get('oasis_not_on_order'),
+            'price_from'   => $params->get('oasis_price_from'),
+            'price_to'     => $params->get('oasis_price_to'),
+            'rating'       => $params->get('oasis_rating') ?? '0,1,2,3,4,5',
+            'moscow'       => $params->get('oasis_warehouse_moscow'),
+            'europe'       => $params->get('oasis_warehouse_europe'),
+            'remote'       => $params->get('oasis_remote_warehouse'),
+        ];
+
+        $category = $params->get('oasis_categories');
+
+        if ($category) {
+            $data['category'] = implode(',', $category);
+        } else {
+            $data['category'] = implode(',', OasisHelper::getOasisMainCategories());
+        }
+
+        foreach ($data as $key => $value) {
+            if ($value) {
+                $args[$key] = $value;
+            }
+        }
+
+        return self::curlQuery('v4/','stat', $args);
+    }
+
+    /**
+     * Get oasis main categories levels 1
+     *
+     * @return array
+     *
+     * @since 2.0
+     */
+    public static function getOasisMainCategories(): array
+    {
+        $result = [];
+        $categories = OasisHelper::getOasisCategories();
+
+        foreach ($categories as $item) {
+            if ($item->level === 1) {
+                $result[] = $item->id;
+            }
+        }
+
+        return $result;
     }
 
     /**

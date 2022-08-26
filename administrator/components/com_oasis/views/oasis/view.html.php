@@ -100,6 +100,8 @@ class OasisViewOasis extends JViewLegacy
     {
         $document = JFactory::getDocument();
         $document->setTitle(JText::_('COM_OASIS_TITLE'));
+        $document->addStyleSheet(JURI::base() . 'components/com_oasis/assets/css/stylesheet.css','text/css','screen');
+        //TODO adapt to joomla 4
     }
 }
 

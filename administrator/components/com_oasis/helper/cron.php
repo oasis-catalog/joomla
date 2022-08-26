@@ -282,6 +282,10 @@ class Oasiscron extends JApplicationCli
                     $limit = (int)$params->get('oasis_limit');
                     $step = (int)$params->get('oasis_step');
 
+                    $stat = OasisHelper::getOasisStat();
+                    $params->set('progress_total', $stat->products);
+                    $params->set('progress_step_item', 0);
+
                     if ($limit > 0) {
                         $args['limit'] = $limit;
                         $args['offset'] = $step * $limit;
@@ -289,6 +293,10 @@ class Oasiscron extends JApplicationCli
 
                     $this->categories = OasisHelper::getOasisCategories();
                     $this->products = OasisHelper::getOasisProducts($args);
+
+                    if ($limit > 0) {
+                        $params->set('progress_step_total', count($this->products));
+                    }
 
                     if ($this->products) {
                         $nextStep = ++$step;
@@ -327,6 +335,7 @@ class Oasiscron extends JApplicationCli
                                     OasisHelper::debug(' | edit id: ' . $dbProductId . PHP_EOL);
                                 }
                                 $i++;
+                                $this->model->editOasisProgress($limit);
                             } else {
                                 $firstProduct = reset($products);
                                 $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
@@ -356,15 +365,22 @@ class Oasiscron extends JApplicationCli
                                         OasisHelper::debug('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | edit id: ' . $dbProductId . PHP_EOL);
                                     }
                                     $i++;
+                                    $this->model->editOasisProgress($limit);
                                 }
                             }
                         }
                     }
 
+                    $params = JComponentHelper::getParams('com_oasis');
+
                     if (!empty($limit)) {
                         $params->set('oasis_step', $nextStep);
-                        $this->model->editOasisStep($params);
+                    } else {
+                        $params->set('progress_item', $stat->products);
                     }
+
+                    $params->set('progress_date', date('Y-m-d H:i:s'));
+                    $this->model->editOasisParams($params);
 
                     $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
 

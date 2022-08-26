@@ -10,92 +10,63 @@
  */
 
 defined('_JEXEC') or die;
+$params = JComponentHelper::getParams('com_oasis');
+$cron_key = md5($params->get('oasis_api_key'));
 
+$progressTotal = (int)$params->get('progress_total');
+$progressItem = (int)$params->get('progress_item');
+$progressStepTotal = (int)$params->get('progress_step_total');
+$progressStepItem = (int)$params->get('progress_step_item');
+$progressDate = $params->get('progress_date');
+$limit = (int)$params->get('oasis_limit');
+
+if (!empty($limit)) {
+    $step = (int)$params->get('oasis_step');
+    $stepTotal = !empty($progressTotal) ? ceil($progressTotal / $limit) : 0;
+}
+
+if (!empty($progressTotal) && !empty($progressItem)) {
+    $percentTotal = round(($progressItem / $progressTotal) * 100);
+} else {
+    $percentTotal = 0;
+}
+
+if (!empty($progressStepTotal) && !empty($progressStepItem)) {
+    $percentStep = round(($progressStepItem / $progressStepTotal) * 100);
+} else {
+    $percentStep = 0;
+}
 ?>
-<style type="text/css">
-    .tree-select {
-        line-height: normal;
-    }
-
-    .tree-select label {
-        position: relative;
-        display: block;
-        padding: 0 0 0 1.2em !important;
-        margin: 0;
-    }
-
-    .tree-select label:not(:nth-last-of-type(1)) {
-        border-left: 1px solid #94a5bd;
-    }
-
-    .tree-select label:before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 1.1em;
-        height: .5em;
-        border-bottom: 1px solid #94a5bd;
-    }
-
-    .tree-select label:nth-last-of-type(1):before {
-        border-left: 1px solid #94a5bd;
-    }
-
-    .tree-select fieldset,
-    .tree-select fieldset[class=""] .razvernut {
-        position: absolute;
-        visibility: hidden;
-        margin: 0;
-        padding: 0 0 0 2em;
-        border: none;
-    }
-
-    .tree-select fieldset:not(:last-child) {
-        border-left: 1px solid #94a5bd;
-    }
-
-    .tree-select .razvernut {
-        position: relative;
-        visibility: visible;
-    }
-
-    .tree-select > fieldset > legend,
-    .tree-select .razvernut > fieldset > legend {
-        position: absolute;
-        left: -5px;
-        top: 2px;
-        height: 10px;
-        width: 10px;
-        margin-top: -1em;
-        padding: 0;
-        border: 1px solid #94a5bd;
-        border-radius: 2px;
-        background-repeat: no-repeat;
-        background-position: 50% 50%;
-        background-color: #fff;
-        background-image: linear-gradient(to left, #1b4964, #1b4964), linear-gradient(#1b4964, #1b4964), linear-gradient(315deg, #a0b6d8, #e8f3ff 60%, #fff 60%);
-        background-size: 1px 5px, 5px 1px, 100% 100%;
-        visibility: visible;
-        cursor: pointer;
-    }
-
-    .tree-select fieldset[class=""] .razvernut fieldset legend {
-        visibility: hidden;
-    }
-
-    .tree-select .razvernut > legend {
-        background-image: linear-gradient(#1b4964, #1b4964) !important;
-        background-size: 5px 1px !important;
-    }
-
-    .icon-publish:before {
-        color: #fff;
-    }
-</style>
-<?php
-$cron_key = md5(JComponentHelper::getParams('com_oasis')->get('oasis_api_key'));
-?>
+<div class="row-fluid">
+    <div class="progress-notice">
+        <div class="progress-row">
+            <div class="progress-label">
+                <h3><?php echo JText::_('COM_OASIS_PROGRESS_TOTAL', true); ?></h3>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress total" style="width: <?php echo $percentTotal; ?>%;"><?php echo $percentTotal; ?>%</div>
+                </div>
+            </div>
+        </div>
+        <?php if (!empty($limit)) { ?>
+            <div class="progress-row">
+                <div class="progress-label">
+                    <h3><?php echo sprintf(JText::_('COM_OASIS_PROGRESS_STEP', true), ++$step, $stepTotal); ?></h3>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress step" style="width: <?php echo $percentStep; ?>%;"><?php echo $percentStep; ?>%</div>
+                    </div>
+                </div>
+            </div>
+        <?php } ?>
+        <p><?php
+            echo JText::_('COM_OASIS_PROGRESS_DATE', true);
+            echo !empty($progressDate) ? $progressDate : '';
+            ?></p>
+    </div>
+</div>
 <div class="row-fluid">
     <div class="row-fluid form-horizontal span10">
         <div class="row-fluid span12">
