@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<extension type="component" version="3.10" method="upgrade">
+<extension type="component" method="upgrade">
 	<name>COM_OASIS</name>
-	<creationDate>23 August 2021</creationDate>
+	<creationDate>06 March 2023</creationDate>
 	<author>Viktor G.</author>
 	<authorEmail>ever2013@mail.ru</authorEmail>
-	<authorUrl>https://www.oasiscatalog.com/</authorUrl>
-	<copyright>Copyright (C) 2021 Oasiscatalog. All rights reserved.</copyright>
+	<authorUrl>https://sitever.ru/</authorUrl>
+	<copyright>Copyright (C) 2023 Oasiscatalog. All rights reserved.</copyright>
 	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
-	<version>2.2</version>
+	<version>4.0</version>
 	<description>COM_OASIS_XML_DESCRIPTION</description>
 	<scriptfile>script.php</scriptfile>
+	<namespace path="src">Oasiscatalog\Component\Oasis</namespace>
 	<install>
 		<sql>
 			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
@@ -27,14 +28,18 @@
 		<!-- Core files -->
 		<files folder="admin">
 			<filename>config.xml</filename>
-			<filename>oasis.php</filename>
-			<filename>controller.php</filename>
-			<folder>controllers</folder>
-			<folder>helper</folder>
-			<folder>language</folder>
-			<folder>models</folder>
+			<folder>assets</folder>
+			<folder>forms</folder>
+			<folder>services</folder>
 			<folder>sql</folder>
-			<folder>views</folder>
+			<folder>src</folder>
+			<folder>tmpl</folder>
 		</files>
+		<languages folder="admin">
+			<language tag="en-GB">language/en-GB/com_oasis.ini</language>
+			<language tag="en-GB">language/en-GB/com_oasis.sys.ini</language>
+			<language tag="ru-RU">language/ru-RU/com_oasis.ini</language>
+			<language tag="ru-RU">language/ru-RU/com_oasis.sys.ini</language>
+		</languages>
 	</administration>
 </extension>

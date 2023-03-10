@@ -1,100 +1,61 @@
 <?php
+
+namespace Oasiscatalog\Component\Oasis\Administrator\CliCommand;
+
+defined('_JEXEC') or die;
+
+use Exception;
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Factory\MVCFactoryAwareTrait;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+use Oasiscatalog\Component\Oasis\Administrator\Model\OasisModel;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
 /**
  * @package     Oasis
  * @subpackage  Administrator
  *
  * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2021 Oasiscatalog. All rights reserved.
+ * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @link        https://www.oasiscatalog.com/
+ * @since 4.0
  */
-
-use Joomla\Registry\Registry;
-
-/**
- * This is a CRON script which should be called from the command-line, not the
- * web. For example something like:
- * /usr/local/bin/php /path/to/site/administrator/components/com_oasis/helper/cron.php --key=
- * /usr/local/bin/php /path/to/site/administrator/components/com_oasis/helper/cron.php --key= --up
- */
-
-const _JEXEC = 1;
-
-error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
-ini_set('display_errors', 1);
-
-if (file_exists(dirname(__DIR__, 4) . '/defines.php')) {
-    require_once dirname(__DIR__, 4) . '/defines.php';
-}
-
-if (!defined('_JDEFINES')) {
-    define('JPATH_BASE', dirname(__DIR__, 3));
-    require_once JPATH_BASE . '/includes/defines.php';
-}
-
-if (file_exists(JPATH_LIBRARIES . '/import.legacy.php')) {
-    require_once JPATH_LIBRARIES . '/import.legacy.php';
-} elseif (file_exists(JPATH_LIBRARIES . '/import.php')) {
-    require_once JPATH_LIBRARIES . '/import.php';
-}
-
-require_once JPATH_LIBRARIES . '/cms.php';
-
-require_once JPATH_CONFIGURATION . '/configuration.php';
-
-jimport('joomla.environment.uri');
-jimport('joomla.event.dispatcher');
-jimport('joomla.utilities.utility');
-jimport('joomla.utilities.arrayhelper');
-jimport('joomla.environment.request');
-jimport('joomla.application.component.helper');
-jimport('joomla.application.component.helper');
-jimport('joomla.filesystem.path');
-
-JFactory::getApplication('administrator');
-JFactory::getApplication()->input->set('option', 'com_oasis');
-
-const JPATH_COMPONENT = JPATH_ROOT . '/components/com_oasis';
-const JPATH_COMPONENT_SITE = JPATH_ROOT . '/components/com_oasis';
-const JPATH_COMPONENT_ADMINISTRATOR = JPATH_ADMINISTRATOR . '/components/com_oasis';
-
-const OASIS_VERSION = '2.0';
-
-$config = JFactory::getConfig();
-
-JLoader::registerPrefix('Oasis', JPATH_ADMINISTRATOR . '/components/com_oasis', true);
-require_once JPATH_ROOT . '/administrator/components/com_oasis/helper/oasis.php';
-require_once JPATH_ROOT . '/administrator/components/com_oasis/models/oasis.php';
-
-/**
- * Runs a Oasis cron job
- *
- * --arguments can have any value
- * -arguments are boolean
- *
- * @package     Oasis
- * @subpackage  CLI
- *
- * @since 2.0
- */
-class Oasiscron extends JApplicationCli
+class Command extends \Joomla\Console\Command\AbstractCommand
 {
+    use MVCFactoryAwareTrait;
 
     /**
-     * Settings class
+     * The default command name
      *
-     * @var    OasisHelperSettings
-     *
-     * @since 2.0
+     * @var    string
+     * @since 4.0
      */
-    private $settings = null;
+    protected static $defaultName = 'oasis:import';
+
+    /**
+     * @var   SymfonyStyle
+     * @since 4.0
+     */
+    private SymfonyStyle $ioStyle;
+
+    /**
+     * @var   InputInterface
+     * @since 4.0
+     */
+    private InputInterface $cliInput;
 
     /**
      * Database class
      *
-     * @var    JDatabaseDriver
+     * @var    DatabaseDriver
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $db = null;
 
@@ -103,7 +64,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var    null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $model = null;
 
@@ -112,7 +73,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $categories = null;
 
@@ -121,7 +82,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $products = null;
 
@@ -130,7 +91,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $manufacturers = null;
 
@@ -139,7 +100,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $customFields = null;
 
@@ -148,7 +109,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $priceFactor = null;
 
@@ -157,7 +118,7 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $priceIncrease = null;
 
@@ -166,268 +127,232 @@ class Oasiscron extends JApplicationCli
      *
      * @var null
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $priceDealer = null;
 
     /**
-     * Class constructor.
-     *
-     * @param \JInputCli|null $input
-     * @param \Joomla\Registry\Registry|null $config
-     * @param \JEventDispatcher|null $dispatcher
-     *
-     * @since 2.0
+     * @inheritDoc
+     * @since 4.0
      */
-    public function __construct(JInputCli $input = null, Registry $config = null, JEventDispatcher $dispatcher = null)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $version_php = intval(PHP_MAJOR_VERSION . PHP_MINOR_VERSION);
+        // Set limits
+        set_time_limit(0);
+        ini_set('memory_limit', '4G');
 
-        if ($version_php < 73) {
-            die('Error! Minimum PHP version 7.3, your PHP version ' . PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION);
+        $this->configureSymfonyIO($input, $output);
+        $params = ComponentHelper::getParams('com_oasis');
+        $apiKey = $params->get('oasis_api_key');
+
+        if (empty($apiKey)) {
+            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_NOT_API_KEY'));
+
+            return 1;
+        } elseif (empty($input->getOption('key'))) {
+            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_NOT_KEY'));
+
+            return 1;
+        } elseif (md5($apiKey) !== $input->getOption('key')) {
+            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_INVALID_KEY'));
+
+            return 1;
         }
 
-        if (array_key_exists('REQUEST_METHOD', $_SERVER)) {
-            echo 'You are not supposed to access this script from the web. You have to run it from the command line. ' .
-                'If you don\'t understand what this means, you must not try to use this file before reading the ' .
-                'documentation. Thank you.';
-            $this->close();
-        }
+        $this->db = Factory::getContainer()->get('DatabaseDriver');
+        $this->model = new OasisModel();
 
-        $cgiMode = false;
+        try {
+            $start_time = microtime(true);
 
-        if (!defined('STDOUT') || !defined('STDIN') || !isset($_SERVER['argv'])) {
-            $cgiMode = true;
-        }
+            if (!$input->getOption('up')) {
+                $this->ioStyle->writeln('Start import/update products');
 
-        if ($input instanceof JInput) {
-            $this->input = $input;
-        } else {
-            if (class_exists('JInput')) {
-                if ($cgiMode) {
-                    $query = 'cron.php ';
+                $args = [];
+                $params = ComponentHelper::getParams('com_oasis');
+                $this->priceFactor = (float)$params->get('oasis_factor');
+                $this->priceIncrease = (float)$params->get('oasis_increase');
+                $this->priceDealer = (int)$params->get('oasis_dealer');
+                $limit = (int)$params->get('oasis_limit');
+                $step = (int)$params->get('oasis_step');
 
-                    if (!empty($_GET)) {
-                        foreach ($_GET as $k => $v) {
-                            $query .= " $k";
+                $stat = OasisHelper::getOasisStat();
+                $params->set('progress_total', $stat->products);
+                $params->set('progress_step_item', 0);
 
-                            if ($v != '') {
-                                $query .= "=$v";
-                            }
-                        }
-                    }
-
-                    $query = ltrim($query);
-                    $argv = explode(' ', $query);
-
-                    $_SERVER['argv'] = $argv;
+                if ($limit > 0) {
+                    $args['limit'] = $limit;
+                    $args['offset'] = $step * $limit;
                 }
 
-                if (class_exists('JInputCLI')) {
-                    $this->input = new JInputCLI;
+                $this->categories = OasisHelper::getOasisCategories();
+                $this->products = OasisHelper::getOasisProducts($args);
+
+                if ($limit > 0) {
+                    $params->set('progress_step_total', count($this->products));
+                }
+
+                if ($this->products) {
+                    $nextStep = ++$step;
                 } else {
-                    $this->input = new JInputCli;
+                    $nextStep = 0;
                 }
-            }
-        }
 
-        define('OASIS_CLI', true);
+                $this->manufacturers = OasisHelper::getOasisManufacturers();
+                $this->customFields = $this->checkVirtuemartCustoms();
 
-        if ($config instanceof Registry) {
-            $this->config = $config;
-        } else {
-            $this->config = new Registry;
-        }
+                $count = count($this->products);
+                $i = 1;
+                $group_ids = [];
 
-        $this->loadDispatcher($dispatcher);
-        $this->loadConfiguration($this->fetchConfigurationData());
-        $this->model = new OasisModelOasis();
-    }
+                foreach ($this->products as $product) {
+                    $group_ids[$product->group_id][$product->id] = $product;
+                }
 
-    /**
-     * Entry point for the script
-     *
-     * @since 2.2
-     */
-    public function doExecute()
-    {
-        $this->onBeforeExecute();
+                if ($group_ids) {
+                    foreach ($group_ids as $group_id => $products) {
+                        $msg = '[' . $count . '-' . $i . ']' . ' Model: ' . $group_id;
 
-        $this->db = JFactory::getDbo();
-        $this->settings = new OasisHelperSettings($this->db);
+                        if (count($products) === 1) {
+                            $product = reset($products);
 
-        $hostname = $this->settings->get('oasis_host', 'http://example.com');
-        $uri = JUri::getInstance($hostname);
-        $_SERVER['HTTP_HOST'] = $uri->getHost();
-        $_SERVER['REQUEST_METHOD'] = 'GET';
+                            $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                                'product_parent_id' => 0,
+                                'product_sku'       => $product->article,
+                            ]);
 
-        $secret = md5($this->settings->get('oasis_api_key'));
-        $key = $this->input->get('key', '', 'raw');
-        $up = $this->input->get('up', '', 'raw');
+                            if (is_null($dbProductId)) {
+                                $dbProductId = $this->addProduct($product);
+                                $this->ioStyle->writeln($msg . ' | add id: ' . $dbProductId);
+                            } else {
+                                $this->editProduct($dbProductId, $product);
+                                $this->ioStyle->writeln($msg . ' | edit id: ' . $dbProductId);
+                            }
+                            $i++;
+                            $this->model->editOasisProgress($limit);
+                        } else {
+                            $firstProduct = reset($products);
+                            $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                                'product_parent_id' => 0,
+                                'product_sku'       => $firstProduct->article,
+                            ]);
 
-        if ($key === $secret) {
-            // Set limits
-            set_time_limit(0);
-            ini_set('memory_limit', '2G');
+                            if (is_null($dbFirstProductId)) {
+                                $dbFirstProductId = $this->addProduct($firstProduct, true);
+                                $this->ioStyle->writeln($msg . ' | Parent add id: ' . $dbFirstProductId);
+                            } else {
+                                $this->editProduct($dbFirstProductId, $firstProduct, true);
+                                $this->ioStyle->writeln($msg . ' | Parent edit id: ' . $dbFirstProductId);
+                            }
 
-            try {
-                $start_time = microtime(true);
-
-                if ($up === '') {
-                    $args = [];
-                    $params = JComponentHelper::getParams('com_oasis');
-                    $this->priceFactor = (float)$params->get('oasis_factor');
-                    $this->priceIncrease = (float)$params->get('oasis_increase');
-                    $this->priceDealer = (int)$params->get('oasis_dealer');
-                    $limit = (int)$params->get('oasis_limit');
-                    $step = (int)$params->get('oasis_step');
-
-                    $stat = OasisHelper::getOasisStat();
-                    $params->set('progress_total', $stat->products);
-                    $params->set('progress_step_item', 0);
-
-                    if ($limit > 0) {
-                        $args['limit'] = $limit;
-                        $args['offset'] = $step * $limit;
-                    }
-
-                    $this->categories = OasisHelper::getOasisCategories();
-                    $this->products = OasisHelper::getOasisProducts($args);
-
-                    if ($limit > 0) {
-                        $params->set('progress_step_total', count($this->products));
-                    }
-
-                    if ($this->products) {
-                        $nextStep = ++$step;
-                    } else {
-                        $nextStep = 0;
-                    }
-
-                    $this->manufacturers = OasisHelper::getOasisManufacturers();
-                    $this->customFields = $this->checkVirtuemartCustoms();
-
-                    $count = count($this->products);
-                    $i = 1;
-                    $group_ids = [];
-
-                    foreach ($this->products as $product) {
-                        $group_ids[$product->group_id][$product->id] = $product;
-                    }
-
-                    if ($group_ids) {
-                        foreach ($group_ids as $group_id => $products) {
-                            OasisHelper::debug('[' . $count . '-' . $i . ']' . ' Model: ' . $group_id);
-
-                            if (count($products) === 1) {
-                                $product = reset($products);
-
+                            foreach ($products as $product) {
                                 $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                    'product_parent_id' => 0,
+                                    'product_parent_id' => $dbFirstProductId,
                                     'product_sku'       => $product->article,
                                 ]);
 
                                 if (is_null($dbProductId)) {
-                                    $dbProductId = $this->addProduct($product);
-                                    OasisHelper::debug(' | add id: ' . $dbProductId . PHP_EOL);
+                                    $dbProductId = $this->addProductChild($dbFirstProductId, $product);
+                                    $this->ioStyle->writeln('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | add id: ' . $dbProductId);
                                 } else {
-                                    $this->editProduct($dbProductId, $product);
-                                    OasisHelper::debug(' | edit id: ' . $dbProductId . PHP_EOL);
+                                    $this->editProductChild($dbProductId, $product);
+                                    $this->ioStyle->writeln('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | edit id: ' . $dbProductId);
                                 }
                                 $i++;
                                 $this->model->editOasisProgress($limit);
-                            } else {
-                                $firstProduct = reset($products);
-                                $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                    'product_parent_id' => 0,
-                                    'product_sku'       => $firstProduct->article,
-                                ]);
-
-                                if (is_null($dbFirstProductId)) {
-                                    $dbFirstProductId = $this->addProduct($firstProduct, true);
-                                    OasisHelper::debug(' | Parent add id: ' . $dbFirstProductId . PHP_EOL);
-                                } else {
-                                    $this->editProduct($dbFirstProductId, $firstProduct, true);
-                                    OasisHelper::debug(' | Parent edit id: ' . $dbFirstProductId . PHP_EOL);
-                                }
-
-                                foreach ($products as $product) {
-                                    $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                        'product_parent_id' => $dbFirstProductId,
-                                        'product_sku'       => $product->article,
-                                    ]);
-
-                                    if (is_null($dbProductId)) {
-                                        $dbProductId = $this->addProductChild($dbFirstProductId, $product);
-                                        OasisHelper::debug('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | add id: ' . $dbProductId . PHP_EOL);
-                                    } else {
-                                        $this->editProductChild($dbProductId, $product);
-                                        OasisHelper::debug('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | edit id: ' . $dbProductId . PHP_EOL);
-                                    }
-                                    $i++;
-                                    $this->model->editOasisProgress($limit);
-                                }
                             }
                         }
                     }
-
-                    $params = JComponentHelper::getParams('com_oasis');
-
-                    if (!empty($limit)) {
-                        $params->set('oasis_step', $nextStep);
-                    } else {
-                        $params->set('progress_item', $stat->products);
-                    }
-
-                    $params->set('progress_date', date('Y-m-d H:i:s'));
-                    $this->model->editOasisParams($params);
-
-                    $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
-
-                    foreach ($productsOasis as $productOasis) {
-                        if (is_null($this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], ['product_sku' => $productOasis['article']]))) {
-                            $this->model->deleteData('#__oasis_product', ['article' => $productOasis['article']]);
-                        }
-                    }
-                } elseif ($up === true) {
-                    $stock = OasisHelper::getOasisStock();
-                    $this->upStock($stock);
                 }
 
-                $end_time = microtime(true);
-                OasisHelper::debug('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.' . PHP_EOL);
-            } catch (Exception $e) {
-                echo $e->getMessage() . PHP_EOL;
-                exit($e->getCode());
+                $params = ComponentHelper::getParams('com_oasis');
+
+                if (!empty($limit)) {
+                    $params->set('oasis_step', $nextStep);
+                } else {
+                    $params->set('progress_item', $stat->products);
+                }
+
+                $params->set('progress_date', date('Y-m-d H:i:s'));
+                $this->model->editOasisParams($params);
+
+                $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
+
+                foreach ($productsOasis as $productOasis) {
+                    if (is_null($this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], ['product_sku' => $productOasis['article']]))) {
+                        $this->model->deleteData('#__oasis_product', ['article' => $productOasis['article']]);
+                    }
+                }
+            } else {
+                $this->ioStyle->writeln('Start update stock');
+                $this->upStock();
             }
+
+            $end_time = microtime(true);
+            $this->ioStyle->success('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.');
+        } catch (Exception $e) {
+            echo $e->getMessage() . PHP_EOL;
+            exit($e->getCode());
         }
+
+
+        return 0;
     }
 
     /**
-     * update product stock
+     * Configure the command.
      *
-     * @param $stock
-     *
-     * @since 2.0
+     * @return  void
+     * @since 4.0
      */
-    public function upStock($stock)
+    protected function configure(): void
     {
+        $this->setDescription(Text::_('COM_OASIS_XML_DESCRIPTION'));
+        $this->setHelp(Text::_('COM_OASIS_CLI_HELP'));
+        $this->addOption('key', '', InputOption::VALUE_REQUIRED, Text::_('COM_OASIS_CLI_KEY_DESC'));
+        $this->addOption('up', '', InputOption::VALUE_NONE, Text::_('COM_OASIS_CLI_UP_DESC'));
+    }
+
+    /**
+     * Configure the IO.
+     *
+     * @param InputInterface $input The input to inject into the command.
+     * @param OutputInterface $output The output to inject into the command.
+     * @return  void
+     * @since 4.0
+     */
+    private function configureSymfonyIO(InputInterface $input, OutputInterface $output)
+    {
+        $this->cliInput = $input;
+        $this->ioStyle = new SymfonyStyle($input, $output);
+    }
+
+    /**
+     * Update product stock
+     *
+     * @since 4.0
+     */
+    private function upStock()
+    {
+        $stock = OasisHelper::getOasisStock();
+
         foreach ($stock as $item) {
             $oasisProduct = $this->model->getData('#__oasis_product', ['rating', 'product_id'], ['product_id_oasis' => $item->id], false, 'loadAssoc');
 
             if (!is_null($oasisProduct) && (int)$oasisProduct['rating'] !== 5) {
-                $this->model->upData('#__virtuemart_products', ['virtuemart_product_id' => $oasisProduct['product_id']], ['product_in_stock' => $item->stock]);
+                $this->model->upData('#__virtuemart_products', ['virtuemart_product_id' => $oasisProduct['product_id']], ['product_in_stock' => intval($item->stock)]);
             }
         }
         unset($item, $oasisProduct);
     }
+
 
     /**
      * @param      $product
      * @param bool $firstProduct
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addProduct($product, bool $firstProduct = false): int
     {
@@ -472,7 +397,7 @@ class Oasiscron extends JApplicationCli
      * @param       $product
      * @param bool $firstProduct
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function editProduct($vmProductId, $product, bool $firstProduct = false)
     {
@@ -492,14 +417,14 @@ class Oasiscron extends JApplicationCli
      * @param $product
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addProductChild($parent_id, $product): int
     {
         // add product
         $dataProducts = [
             'product_parent_id' => $parent_id,
-            'product_in_stock'  => $product->rating === 5 ? 1000000 : $product->total_stock,
+            'product_in_stock'  => $product->rating === 5 ? 1000000 : intval($product->total_stock),
             'has_categories'    => 0,
             'has_manufacturers' => 0,
             'has_medias'        => 1,
@@ -530,12 +455,12 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function editProductChild($product_id, $product)
     {
         $dataProducts = [
-            'product_in_stock' => $product->rating === 5 ? 1000000 : $product->total_stock,
+            'product_in_stock' => $product->rating === 5 ? 1000000 : intval($product->total_stock),
         ];
 
         if (is_null($product->total_stock) && $product->rating !== 5) {
@@ -557,7 +482,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addСhildProductCustomFields($parent_id, $product_id, $product)
     {
@@ -629,7 +554,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function oasisProduct($product_id, $product)
     {
@@ -659,7 +584,7 @@ class Oasiscron extends JApplicationCli
      * @param array $data
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addVirtuemartProducts($product, array $data = []): int
     {
@@ -671,7 +596,7 @@ class Oasiscron extends JApplicationCli
             'product_weight_uom'   => 'KG',
             'product_lwh_uom'      => 'M',
             'product_url'          => '',
-            'product_in_stock'     => $product->total_stock,
+            'product_in_stock'     => intval($product->total_stock),
             'product_availability' => '',
             'product_unit'         => 'KG',
             'product_params'       => 'min_order_level=null|max_order_level=null|step_order_level=null|shared_stock="0"|product_box=null|',
@@ -700,12 +625,11 @@ class Oasiscron extends JApplicationCli
      * @param       $product
      * @param array $data
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function editVirtuemartProducts($vmProductId, $product, array $data = [])
     {
-        $dataProduct = $this->model->getData('#__virtuemart_products', ['*'], ['virtuemart_product_id' => $vmProductId], false, 'loadAssoc');
-        $dataProduct['product_in_stock'] = $product->total_stock;
+        $dataProduct['product_in_stock'] = intval($product->total_stock);
         $dataProduct['published'] = (is_null($product->total_stock) && $product->rating !== 5) ? 0 : 1;
 
         $data += $dataProduct;
@@ -721,7 +645,7 @@ class Oasiscron extends JApplicationCli
      * @param bool $isChild
      * @param bool $edit
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function virtuemartProductsLang($product_id, $product, bool $isChild = false, bool $edit = false)
     {
@@ -793,7 +717,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function virtuemartProductCategories($product_id, $product)
     {
@@ -836,7 +760,7 @@ class Oasiscron extends JApplicationCli
      * @param $product
      * @return mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function virtuemartProductManufacturers($product_id, $product)
     {
@@ -863,7 +787,7 @@ class Oasiscron extends JApplicationCli
      * @param $product
      * @param false $isChild
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function processingProductMedias($product_id, $product, bool $isChild = false)
     {
@@ -891,7 +815,9 @@ class Oasiscron extends JApplicationCli
                         $vmImageId = $this->saveProductImage($image);
                     }
 
-                    $this->addVirtuemartProductMedia($product_id, $vmImageId, ++$key);
+                    if ($vmImageId) {
+                        $this->addVirtuemartProductMedia($product_id, $vmImageId, ++$key);
+                    }
                 }
             }
             unset($key, $image, $vmImageId);
@@ -904,7 +830,7 @@ class Oasiscron extends JApplicationCli
      * @param $image
      * @return int|null
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function saveProductImage($image): ?int
     {
@@ -931,7 +857,7 @@ class Oasiscron extends JApplicationCli
      * @param $vmImageId
      * @param $ordering
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addVirtuemartProductMedia($product_id, $vmImageId, $ordering)
     {
@@ -956,7 +882,7 @@ class Oasiscron extends JApplicationCli
      * @param $product_id
      * @param $product
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function virtuemartProductPrices($product_id, $product)
     {
@@ -986,8 +912,7 @@ class Oasiscron extends JApplicationCli
             $this->model->addData('#__virtuemart_product_prices', $data);
         } else {
             foreach ($vmProductPrice as $item) {
-                $item['product_price'] = $price;
-                $this->model->upData('#__virtuemart_product_prices', ['virtuemart_product_id' => $product_id], $item);
+                $this->model->upData('#__virtuemart_product_prices', ['virtuemart_product_price_id' => $item['virtuemart_product_price_id']], ['product_price' => $price]);
             }
         }
     }
@@ -995,7 +920,7 @@ class Oasiscron extends JApplicationCli
     /**
      * @return array
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function checkVirtuemartCustoms(): array
     {
@@ -1043,7 +968,7 @@ class Oasiscron extends JApplicationCli
      * @param string $value
      * @return mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getProductCustomfieldParams($product_id, string $value = '')
     {
@@ -1060,7 +985,7 @@ class Oasiscron extends JApplicationCli
      * @param $data
      * @return array
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function decodeCustomfieldParams($data): array
     {
@@ -1081,7 +1006,7 @@ class Oasiscron extends JApplicationCli
      * @param array $dataParams
      * @return string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function encodeCustomfieldParams(array $dataParams): string
     {
@@ -1089,7 +1014,7 @@ class Oasiscron extends JApplicationCli
 
         foreach ($dataParams as $key => $value) {
             if (!empty($key)) {
-                $result .= $key . '=' . vmJsApi::safe_json_encode($value) . '|';
+                $result .= $key . '=' . \vmJsApi::safe_json_encode($value) . '|';
             }
         }
 
@@ -1100,7 +1025,7 @@ class Oasiscron extends JApplicationCli
      * @param        $product_id
      * @param array $data
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addProductCustomfields($product_id, array $data = [])
     {
@@ -1109,7 +1034,7 @@ class Oasiscron extends JApplicationCli
             'customfield_value'     => NULL,
             'customfield_params'    => '',
             'virtuemart_product_id' => $product_id,
-            'customfield_price'     => NULL,
+            'customfield_price'     => 0,
             'published'             => 0,
         ];
 
@@ -1119,7 +1044,7 @@ class Oasiscron extends JApplicationCli
     /**
      * @param $customfield_id
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function editProductCustomfields($customfield_id)
     {
@@ -1132,7 +1057,7 @@ class Oasiscron extends JApplicationCli
      * @param int $count
      * @return string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getSlug($table, $str, int $count = 0): string
     {
@@ -1154,49 +1079,10 @@ class Oasiscron extends JApplicationCli
     }
 
     /**
-     * Load settings before we execute.
-     *
-     * @return  void.
-     *
-     * @since 2.0
-     */
-    public function onBeforeExecute()
-    {
-        // Merge the default translation with the current translation
-        $jlang = JFactory::getLanguage();
-        $jlang->load('com_oasis', JPATH_COMPONENT_ADMINISTRATOR, 'ru-RU', true);
-        $jlang->load('com_oasis', JPATH_COMPONENT_ADMINISTRATOR, $jlang->getDefault(), true);
-        $jlang->load('com_oasis', JPATH_COMPONENT_ADMINISTRATOR, null, true);
-    }
-
-    /**
-     * Write a string to standard output.
-     *
-     * @param string $text The text to display.
-     * @param boolean $nl True (default) to append a new line at the end of the output string.
-     *
-     * @return  JApplicationCli  Instance of $this to allow chaining.
-     *
-     * @codeCoverageIgnore
-     *
-     * @since 2.0
-     */
-    public function out($text = '', $nl = true)
-    {
-        echo $text;
-
-        if ($nl) {
-            echo "\n";
-        }
-
-        return $this;
-    }
-
-    /**
      * @param $product_categories
      * @return array
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getArrCategories($product_categories): array
     {
@@ -1218,7 +1104,7 @@ class Oasiscron extends JApplicationCli
      * @param $oasisCatId
      * @return bool|int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getVmCategoryId($oasisCatId)
     {
@@ -1241,7 +1127,7 @@ class Oasiscron extends JApplicationCli
      * @param $category
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addCategory($category): int
     {
@@ -1309,7 +1195,7 @@ class Oasiscron extends JApplicationCli
      * @param $brand_id
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addBrand($brand_id)
     {
@@ -1321,11 +1207,4 @@ class Oasiscron extends JApplicationCli
 
         return $this->model->getManufacturer($brand);
     }
-}
-
-try {
-    JApplicationCli::getInstance('Oasiscron')->execute();
-} catch (Exception $e) {
-    echo $e->getMessage() . PHP_EOL;
-    exit($e->getCode());
 }

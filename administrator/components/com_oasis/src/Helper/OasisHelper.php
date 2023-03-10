@@ -4,10 +4,15 @@
  * @subpackage  Administrator
  *
  * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2021 Oasiscatalog. All rights reserved.
+ * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @link        https://www.oasiscatalog.com/
  */
+
+namespace Oasiscatalog\Component\Oasis\Administrator\Helper;
+
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
 
 defined('_JEXEC') or die;
 
@@ -17,27 +22,27 @@ defined('_JEXEC') or die;
  * @package     Oasis
  * @subpackage  Helper
  *
- * @since 2.0
+ * @since 4.0
  */
 final class OasisHelper
 {
     /**
      * Database connector
      *
-     * @var    JDatabase
+     * @var    DatabaseDriver
      *
-     * @since 2.0
+     * @since 4.0
      */
     protected $db;
 
     /**
      * Public class constructor
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function __construct()
     {
-        $this->db = JFactory::getDbo();
+        $this->db = Factory::getContainer()->get('DatabaseDriver');
     }
 
     /**
@@ -47,7 +52,7 @@ final class OasisHelper
      * @param $id
      * @return mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function searchObject($data, $id)
     {
@@ -68,11 +73,11 @@ final class OasisHelper
      * @param array $args
      * @return mixed
      *
-     * @since 2.2
+     * @since 4.0
      */
     public static function getOasisProducts(array $args = [])
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
         $args['fieldset'] = 'full';
 
@@ -118,11 +123,11 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.2
+     * @since 4.0
      */
     public static function getOasisStat()
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
         $data = [
             'not_on_order' => $params->get('oasis_not_on_order'),
@@ -156,7 +161,7 @@ final class OasisHelper
      *
      * @return array
      *
-     * @since 2.2
+     * @since 4.0
      */
     public static function getOasisMainCategories(): array
     {
@@ -177,7 +182,7 @@ final class OasisHelper
      * @param int $len
      * @return string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function textExcerpt($text, int $len = 15): string
     {
@@ -196,7 +201,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function getOasisCurrencies()
     {
@@ -208,7 +213,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function getOasisCategories()
     {
@@ -220,7 +225,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function getOasisManufacturers()
     {
@@ -232,7 +237,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function getOasisStock()
     {
@@ -244,7 +249,7 @@ final class OasisHelper
      *
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function getOasisQueue($queue_id)
     {
@@ -257,11 +262,11 @@ final class OasisHelper
      * @param array $args
      * @return false|mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function curlQuery($version, $type, array $args = [])
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
         $args_pref = [
             'key'    => $params->get('oasis_api_key'),
@@ -284,7 +289,7 @@ final class OasisHelper
      * @param int $count
      * @return false|string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function saveImg($data, int $count = 0)
     {
@@ -327,7 +332,7 @@ final class OasisHelper
      * @param $folder
      * @return false|string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function imgFolder($folder)
     {
@@ -347,7 +352,7 @@ final class OasisHelper
      * @param $str
      * @return string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function transliter($str): string
     {
@@ -452,7 +457,7 @@ final class OasisHelper
      * @param $msg
      * @param bool $logFile
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function debug($msg, $logFile = false)
     {
@@ -468,7 +473,7 @@ final class OasisHelper
     /**
      * @param $msg
      *
-     * @since 2.0
+     * @since 4.0
      */
     public static function saveToLog($msg)
     {

@@ -4,10 +4,19 @@
  * @subpackage  Administrator
  *
  * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2021 Oasiscatalog. All rights reserved.
+ * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @link        https://www.oasiscatalog.com/
  */
+
+namespace Oasiscatalog\Component\Oasis\Administrator\Model;
+
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\MVC\Model\AdminModel;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+use VmConfig;
 
 defined('_JEXEC') or die;
 
@@ -19,38 +28,38 @@ require_once JPATH_ADMINISTRATOR . '/components/com_virtuemart/helpers/config.ph
  * @package     Oasis
  * @subpackage  Oasis
  *
- * @since 2.0
+ * @since 4.0
  */
-class OasisModelOasis extends JModelAdmin
+class OasisModel extends AdminModel
 {
     /**
      * Virtuemart config
      *
      * @var    VmConfig
      *
-     * @since 2.0
+     * @since 4.0
      */
     protected $vmconfig = null;
 
     /**
      * Database connector
      *
-     * @var    JDatabase
+     * @var    Database
      *
-     * @since 2.0
+     * @since 4.0
      */
     protected $db;
 
     /**
      * Public class constructor
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function __construct($config = [])
     {
         parent::__construct($config);
 
-        $this->db = JFactory::getDbo();
+        $this->db = Factory::getContainer()->get('DatabaseDriver');
         $this->vmconfig = VmConfig::loadConfig();
     }
 
@@ -61,15 +70,16 @@ class OasisModelOasis extends JModelAdmin
      * @param boolean $loadData True if the form is to load its own data (default case), false if not.
      * @return  mixed  A JForm object on success | False on failure.
      *
-     * @since 2.0
+     * @throws \Exception
+     * @since 4.0
      */
     public function getForm($data = [], $loadData = true)
     {
-        JForm::addFormPath(JPATH_ADMINISTRATOR . '/components/com_oasis/views/oasis/tmpl/');
+         Form::addFormPath(JPATH_ADMINISTRATOR . '/components/com_oasis/tmpl/oasis/');
 
         $form = $this->loadForm(
             'com_oasis.oasis',
-            'default',
+            'oasis',
             [
                 'control'   => 'jform',
                 'load_data' => $loadData,
@@ -88,13 +98,13 @@ class OasisModelOasis extends JModelAdmin
      *
      * @return array
      *
-     * @since 2.0
+     * @since 4.0
      */
-    protected function loadFormData()
+    protected function loadFormData(): array
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
-        $data = [
+        return [
             'oasis_currency'         => $params->get('oasis_currency'),
             'oasis_no_vat'           => $params->get('oasis_no_vat'),
             'oasis_not_on_order'     => $params->get('oasis_not_on_order'),
@@ -110,15 +120,13 @@ class OasisModelOasis extends JModelAdmin
             'oasis_dealer'           => $params->get('oasis_dealer'),
             'oasis_categories'       => $params->get('oasis_categories'),
         ];
-
-        return $data;
     }
 
     /**
      * @param $category
      * @return int|bool
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getCategoryId($category)
     {
@@ -139,7 +147,7 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param $params
      *
-     * @since 2.2
+     * @since 4.0
      */
     public function editOasisParams($params)
     {
@@ -155,11 +163,11 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @param $limit
      *
-     * @since 2.2
+     * @since 4.0
      */
     public function editOasisProgress($limit)
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
         $progress_item = $params->get('progress_item');
         $params->set('progress_item', ++$progress_item);
@@ -176,7 +184,7 @@ class OasisModelOasis extends JModelAdmin
      * @param $data
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getManufacturer($data): int
     {
@@ -215,7 +223,7 @@ class OasisModelOasis extends JModelAdmin
     /**
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getManufacturerCategories(): int
     {
@@ -243,7 +251,7 @@ class OasisModelOasis extends JModelAdmin
      * @param string $file_type
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addVirtuemartMedias($img, string $file_type = 'product'): int
     {
@@ -273,7 +281,7 @@ class OasisModelOasis extends JModelAdmin
      * @param string $operator
      * @return mixed
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getData($table, $dataSelect, array $dataWhere = [], bool $lang = false, string $funcName = '', string $operator = '=')
     {
@@ -311,7 +319,7 @@ class OasisModelOasis extends JModelAdmin
      * @param false $lang
      * @return int
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function addData($table, array $data = [], bool $lang = false): int
     {
@@ -343,7 +351,7 @@ class OasisModelOasis extends JModelAdmin
      * @param      $data
      * @param bool $lang
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function upData($table, $dataWhere, $data, bool $lang = false)
     {
@@ -371,7 +379,7 @@ class OasisModelOasis extends JModelAdmin
      * @param      $dataWhere
      * @param bool $lang
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function deleteData($table, $dataWhere, bool $lang = false)
     {

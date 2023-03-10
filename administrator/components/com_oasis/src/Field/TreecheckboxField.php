@@ -4,45 +4,48 @@
  * @subpackage  Administrator
  *
  * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2021 Oasiscatalog. All rights reserved.
+ * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @link        https://www.oasiscatalog.com/
  */
 
-defined('_JEXEC') or die;
+namespace Oasiscatalog\Component\Oasis\Administrator\Field;
 
-use Joomla\CMS\Factory;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Form\FormField;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+
+defined('_JEXEC') or die;
 
 /**
  * The TreeCheckbox form field class of the Oasis component
  *
- * @since 2.0
+ * @since 4.0
  */
-class JFormFieldTreeCheckbox extends FormField
+class TreeCheckboxField extends FormField
 {
     /**
      * @var string
      *
-     * @since 2.0
+     * @since 4.0
      */
     protected $type = 'TreeCheckbox';
 
     /**
      * @var string
      *
-     * @since 2.0
+     * @since 4.0
      */
     private $treeCats = '';
 
     /**
      * @return string
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function getInput()
     {
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
         $api_key = $params->get('oasis_api_key');
 
         if (isset($api_key) && $api_key !== '') {
@@ -68,7 +71,7 @@ class JFormFieldTreeCheckbox extends FormField
      * @param int $parent_id
      * @param bool $sw
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function buildTreeCats($data, int $parent_id = 0, bool $sw = false)
     {

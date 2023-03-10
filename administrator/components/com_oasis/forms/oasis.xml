@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<form cron="false">
-    <fieldset name="options" label="COM_OASIS_OPTION" addfieldpath="/administrator/components/com_oasis/models/fields">
+<form addfieldprefix="Oasiscatalog\Component\Oasis\Administrator\Field">
+    <fieldset name="options" label="COM_OASIS_OPTION">
         <field name="oasis_currency" type="list" label="Валюта" description="Валюта для загрузки">
             <option value="rub">Российский рубль</option>
             <option value="usd">Доллар США</option>
@@ -29,7 +29,7 @@
         <field name="oasis_dealer" type="checkbox" label="Использовать диллерские цены" description="Использовать в качестве базовой цены диллерские цены"/>
         <field name="oasis_categories" type="treecheckbox" label="Категории" description="Дерево категорий"/>
     </fieldset>
-    <fieldset name="orders" label="COM_OASIS_ORDER" addfieldpath="/administrator/components/com_oasis/models/fields">
+    <fieldset name="orders" label="COM_OASIS_ORDER">
         <field name="oasis_orders" type="orders" label="Заказы" description="Список заказов"/>
     </fieldset>
 </form>

@@ -1,31 +1,31 @@
 <?php
+
+namespace Oasiscatalog\Component\Oasis\Administrator\Controller;
+
+defined('_JEXEC') or die;
+
+use Joomla\CMS\Component\ComponentHelper;
+use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\MVC\Controller\BaseController;
+
 /**
  * @package     Oasis
  * @subpackage  Administrator
  *
  * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2021 Oasiscatalog. All rights reserved.
+ * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  * @link        https://www.oasiscatalog.com/
+ * @since 4.0
  */
-
-defined('_JEXEC') or die;
-
-/**
- * Oasis controller.
- *
- * @package     Oasis
- * @subpackage  sub controller
- *
- * @since 2.0
- */
-class OasisControllerOasis extends JControllerLegacy
+class OasisController extends BaseController
 {
 
     /**
      * Save params oasis
      *
-     * @since 2.0
+     * @since 4.0
      */
     public function apply()
     {
@@ -46,11 +46,11 @@ class OasisControllerOasis extends JControllerLegacy
         $data['oasis_categories'] = $_POST['jform']['oasis_categories'] ?? [];
         $data['oasis_host'] = $_POST['jform']['oasis_host'] ?? '';
 
-        $params = JComponentHelper::getParams('com_oasis');
+        $params = ComponentHelper::getParams('com_oasis');
 
         foreach ($data as $key => $value) {
             $params->set($key, $value);
-            $db = JFactory::getDbo();
+            $db = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
             $query->update($db->quoteName('#__extensions'));
             $query->set($db->quoteName('params') . ' = ' . $db->quote((string)$params));
@@ -60,7 +60,7 @@ class OasisControllerOasis extends JControllerLegacy
             $db->execute();
         }
 
-        $this->setRedirect('index.php?option=com_oasis', JText::_('COM_OASIS_OPTION_SAVE'), 'Message');
+        $this->setRedirect('index.php?option=com_oasis', Text::_('COM_OASIS_OPTION_SAVE'), 'Message');
         $this->redirect();
     }
 }

@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `#__oasis_product`
     `rating`                TINYINT(1)      NOT NULL,
     `option_date_modified`  DATETIME        NOT NULL,
     `product_id`            INT(11)         NOT NULL,
-    `article`               CHAR(12)        NOT NULL,
+    `article`               CHAR(18)        NOT NULL,
     PRIMARY KEY (`product_id_oasis`)
     )
     ENGINE = MyISAM
