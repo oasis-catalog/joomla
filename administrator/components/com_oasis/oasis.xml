@@ -7,7 +7,7 @@
 	<authorUrl>https://sitever.ru/</authorUrl>
 	<copyright>Copyright (C) 2023 Oasiscatalog. All rights reserved.</copyright>
 	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
-	<version>4.0</version>
+	<version>4.1</version>
 	<description>COM_OASIS_XML_DESCRIPTION</description>
 	<scriptfile>script.php</scriptfile>
 	<namespace path="src">Oasiscatalog\Component\Oasis</namespace>

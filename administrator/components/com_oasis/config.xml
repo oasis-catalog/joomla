@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config>
 	<fieldset name="option" label="COM_OASIS_OPTION" description="COM_OASIS_OPTION_DESC">
-		<field name="oasis_api_key" type="text" default="" required="true" class="required" label="COM_OASIS_API_KEY" description ="COM_OASIS_API_KEY_DESC"/>
-		<field name="oasis_user_id" type="text" default="" label="COM_OASIS_USER_ID" description ="COM_OASIS_USER_ID_DESC"/>
-		<field name="oasis_currency" type="hidden" default=""/>
-		<field name="oasis_no_vat" type="hidden" default=""/>
-		<field name="oasis_not_on_order" type="hidden" default=""/>
-		<field name="oasis_price_from" type="hidden" default=""/>
-		<field name="oasis_price_to" type="hidden" default=""/>
-		<field name="oasis_rating" type="hidden" default=""/>
-		<field name="oasis_warehouse_moscow" type="hidden" default=""/>
-		<field name="oasis_warehouse_europe" type="hidden" default=""/>
-		<field name="oasis_remote_warehouse" type="hidden" default=""/>
-		<field name="oasis_limit" type="hidden" default=""/>
-		<field name="oasis_factor" type="hidden" default=""/>
-		<field name="oasis_increase" type="hidden" default=""/>
-		<field name="oasis_dealer" type="hidden" default=""/>
-		<field name="oasis_host" type="hidden" default=""/>
+		<field name="api_key" type="text" default="" required="true" class="required" label="COM_OASIS_API_KEY" description ="COM_OASIS_API_KEY_DESC"/>
+		<field name="api_user_id" type="text" default="" label="COM_OASIS_USER_ID" description ="COM_OASIS_USER_ID_DESC"/>
+		<field name="currency" type="hidden" default=""/>
+		<field name="is_no_vat" type="hidden" default=""/>
+		<field name="is_not_on_order" type="hidden" default=""/>
+		<field name="price_from" type="hidden" default=""/>
+		<field name="price_to" type="hidden" default=""/>
+		<field name="rating" type="hidden" default=""/>
+		<field name="is_wh_moscow" type="hidden" default=""/>
+		<field name="is_wh_europe" type="hidden" default=""/>
+		<field name="is_wh_remote" type="hidden" default=""/>
+		<field name="limit" type="hidden" default=""/>
+		<field name="price_factor" type="hidden" default=""/>
+		<field name="price_increase" type="hidden" default=""/>
+		<field name="is_price_dealer" type="hidden" default=""/>
+		<field name="is_not_up_cat" type="hidden" default=""/>
+		<field name="is_import_anytime" type="hidden" default=""/>
 	</fieldset>
 </config>

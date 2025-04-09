@@ -5,16 +5,14 @@ namespace Oasiscatalog\Component\Oasis\Administrator\CliCommand;
 defined('_JEXEC') or die;
 
 use Exception;
-use Joomla\CMS\Component\ComponentHelper;
-use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryAwareTrait;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\Config as OasisConfig;
 use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
 use Oasiscatalog\Component\Oasis\Administrator\Model\OasisModel;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * @package     Oasis
@@ -30,6 +28,8 @@ class Command extends \Joomla\Console\Command\AbstractCommand
 {
     use MVCFactoryAwareTrait;
 
+    private OasisConfig $cf;
+
     /**
      * The default command name
      *
@@ -37,27 +37,6 @@ class Command extends \Joomla\Console\Command\AbstractCommand
      * @since 4.0
      */
     protected static $defaultName = 'oasis:import';
-
-    /**
-     * @var   SymfonyStyle
-     * @since 4.0
-     */
-    private SymfonyStyle $ioStyle;
-
-    /**
-     * @var   InputInterface
-     * @since 4.0
-     */
-    private InputInterface $cliInput;
-
-    /**
-     * Database class
-     *
-     * @var    DatabaseDriver
-     *
-     * @since 4.0
-     */
-    private $db = null;
 
     /**
      * Model class
@@ -105,201 +84,6 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     private $customFields = null;
 
     /**
-     * Price factor
-     *
-     * @var null
-     *
-     * @since 4.0
-     */
-    private $priceFactor = null;
-
-    /**
-     * Price increase
-     *
-     * @var null
-     *
-     * @since 4.0
-     */
-    private $priceIncrease = null;
-
-    /**
-     * Price dealer
-     *
-     * @var null
-     *
-     * @since 4.0
-     */
-    private $priceDealer = null;
-
-    /**
-     * @inheritDoc
-     * @since 4.0
-     */
-    protected function doExecute(InputInterface $input, OutputInterface $output): int
-    {
-        // Set limits
-        set_time_limit(0);
-        ini_set('memory_limit', '4G');
-
-        $this->configureSymfonyIO($input, $output);
-        $params = ComponentHelper::getParams('com_oasis');
-        $apiKey = $params->get('oasis_api_key');
-
-        if (empty($apiKey)) {
-            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_NOT_API_KEY'));
-
-            return 1;
-        } elseif (empty($input->getOption('key'))) {
-            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_NOT_KEY'));
-
-            return 1;
-        } elseif (md5($apiKey) !== $input->getOption('key')) {
-            $this->ioStyle->warning(Text::_('COM_OASIS_CLI_INVALID_KEY'));
-
-            return 1;
-        }
-
-        $this->db = Factory::getContainer()->get('DatabaseDriver');
-        $this->model = new OasisModel();
-
-        try {
-            $start_time = microtime(true);
-
-            if (!$input->getOption('up')) {
-                $this->ioStyle->writeln('Start import/update products');
-
-                $args = [];
-                $params = ComponentHelper::getParams('com_oasis');
-                $this->priceFactor = (float)$params->get('oasis_factor');
-                $this->priceIncrease = (float)$params->get('oasis_increase');
-                $this->priceDealer = (int)$params->get('oasis_dealer');
-                $limit = (int)$params->get('oasis_limit');
-                $step = (int)$params->get('oasis_step');
-
-                $stat = OasisHelper::getOasisStat();
-                $params->set('progress_total', $stat->products);
-                $params->set('progress_step_item', 0);
-
-                if ($limit > 0) {
-                    $args['limit'] = $limit;
-                    $args['offset'] = $step * $limit;
-                }
-
-                $this->categories = OasisHelper::getOasisCategories();
-                $this->products = OasisHelper::getOasisProducts($args);
-
-                if ($limit > 0) {
-                    $params->set('progress_step_total', count($this->products));
-                }
-
-                if ($this->products) {
-                    $nextStep = ++$step;
-                } else {
-                    $nextStep = 0;
-                }
-
-                $this->manufacturers = OasisHelper::getOasisManufacturers();
-                $this->customFields = $this->checkVirtuemartCustoms();
-
-                $count = count($this->products);
-                $i = 1;
-                $group_ids = [];
-
-                foreach ($this->products as $product) {
-                    $group_ids[$product->group_id][$product->id] = $product;
-                }
-
-                if ($group_ids) {
-                    foreach ($group_ids as $group_id => $products) {
-                        $msg = '[' . $count . '-' . $i . ']' . ' Model: ' . $group_id;
-
-                        if (count($products) === 1) {
-                            $product = reset($products);
-
-                            $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                'product_parent_id' => 0,
-                                'product_sku'       => $product->article,
-                            ]);
-
-                            if (is_null($dbProductId)) {
-                                $dbProductId = $this->addProduct($product);
-                                $this->ioStyle->writeln($msg . ' | add id: ' . $dbProductId);
-                            } else {
-                                $this->editProduct($dbProductId, $product);
-                                $this->ioStyle->writeln($msg . ' | edit id: ' . $dbProductId);
-                            }
-                            $i++;
-                            $this->model->editOasisProgress($limit);
-                        } else {
-                            $firstProduct = reset($products);
-                            $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                'product_parent_id' => 0,
-                                'product_sku'       => $firstProduct->article,
-                            ]);
-
-                            if (is_null($dbFirstProductId)) {
-                                $dbFirstProductId = $this->addProduct($firstProduct, true);
-                                $this->ioStyle->writeln($msg . ' | Parent add id: ' . $dbFirstProductId);
-                            } else {
-                                $this->editProduct($dbFirstProductId, $firstProduct, true);
-                                $this->ioStyle->writeln($msg . ' | Parent edit id: ' . $dbFirstProductId);
-                            }
-
-                            foreach ($products as $product) {
-                                $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
-                                    'product_parent_id' => $dbFirstProductId,
-                                    'product_sku'       => $product->article,
-                                ]);
-
-                                if (is_null($dbProductId)) {
-                                    $dbProductId = $this->addProductChild($dbFirstProductId, $product);
-                                    $this->ioStyle->writeln('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | add id: ' . $dbProductId);
-                                } else {
-                                    $this->editProductChild($dbProductId, $product);
-                                    $this->ioStyle->writeln('    [' . $count . '-' . $i . ']' . ' Child: ' . $product->id . ' | edit id: ' . $dbProductId);
-                                }
-                                $i++;
-                                $this->model->editOasisProgress($limit);
-                            }
-                        }
-                    }
-                }
-
-                $params = ComponentHelper::getParams('com_oasis');
-
-                if (!empty($limit)) {
-                    $params->set('oasis_step', $nextStep);
-                } else {
-                    $params->set('progress_item', $stat->products);
-                }
-
-                $params->set('progress_date', date('Y-m-d H:i:s'));
-                $this->model->editOasisParams($params);
-
-                $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
-
-                foreach ($productsOasis as $productOasis) {
-                    if (is_null($this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], ['product_sku' => $productOasis['article']]))) {
-                        $this->model->deleteData('#__oasis_product', ['article' => $productOasis['article']]);
-                    }
-                }
-            } else {
-                $this->ioStyle->writeln('Start update stock');
-                $this->upStock();
-            }
-
-            $end_time = microtime(true);
-            $this->ioStyle->success('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.');
-        } catch (Exception $e) {
-            echo $e->getMessage() . PHP_EOL;
-            exit($e->getCode());
-        }
-
-
-        return 0;
-    }
-
-    /**
      * Configure the command.
      *
      * @return  void
@@ -311,21 +95,163 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         $this->setHelp(Text::_('COM_OASIS_CLI_HELP'));
         $this->addOption('key', '', InputOption::VALUE_REQUIRED, Text::_('COM_OASIS_CLI_KEY_DESC'));
         $this->addOption('up', '', InputOption::VALUE_NONE, Text::_('COM_OASIS_CLI_UP_DESC'));
+        $this->addOption('debug', '', InputOption::VALUE_NONE, 'Console debug');
+        $this->addOption('debug_log', '', InputOption::VALUE_NONE, 'Debug log');
     }
 
     /**
-     * Configure the IO.
-     *
-     * @param InputInterface $input The input to inject into the command.
-     * @param OutputInterface $output The output to inject into the command.
-     * @return  void
+     * @inheritDoc
      * @since 4.0
      */
-    private function configureSymfonyIO(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        $this->cliInput = $input;
-        $this->ioStyle = new SymfonyStyle($input, $output);
+        set_time_limit(0);
+        ini_set('memory_limit', '4G');
+        $this->cf = OasisConfig::instance([
+            'debug' =>      !empty($input->getOption('debug')),
+            'debug_log' =>  !empty($input->getOption('debug_log'))
+        ]);
+        $this->cf->lock(\Closure::bind(function() use ($input, $output) {
+            $this->cf->configureSymfonyIO($input, $output);
+            $this->cf->init();
+            $this->cf->initRelation();
+
+            if (empty($this->cf->api_key)) {
+                $this->cf->log(Text::_('COM_OASIS_CLI_NOT_API_KEY'), 'warn');
+                return 1;
+            } elseif (empty($input->getOption('key'))) {
+                $this->cf->log(Text::_('COM_OASIS_CLI_NOT_KEY'), 'warn');
+                return 1;
+            } elseif (!$this->cf->checkCronKey($input->getOption('key'))) {
+                $this->cf->log(Text::_('COM_OASIS_CLI_INVALID_KEY'), 'warn');
+                return 1;
+            }
+            if (!$this->cf->checkPermissionImport()) {
+                $this->cf->log('Import once day', 'warn');
+                return 1;
+            }
+
+            $this->model = new OasisModel();
+
+            try {
+                $start_time = microtime(true);
+
+                if (!$input->getOption('up')) {
+                    $this->upProduct();
+                } else {
+                    $this->upStock();
+                }
+
+                $end_time = microtime(true);
+                $this->cf->log('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.', 'success');
+            } catch (Exception $e) {
+                echo $e->getMessage() . PHP_EOL;
+                exit($e->getCode());
+            }
+        }, $this), \Closure::bind(function() {
+            $this->cf->log('Already running');
+        }, $this));
+        return 0;
     }
+
+    /**
+     * Update product stock
+     *
+     * @since 4.0
+     */
+    private function upProduct()
+    {
+        $this->cf->log('Start import/update products');
+
+        $args = [];
+        if ($this->cf->limit > 0) {
+            $args['limit'] = $this->cf->limit;
+            $args['offset'] = $this->cf->progress['step'] * $this->cf->limit;
+        }
+
+        $this->categories = OasisHelper::getOasisCategories();
+        $this->products = OasisHelper::getOasisProducts($args);
+
+        $this->manufacturers = OasisHelper::getOasisManufacturers();
+        $this->customFields = $this->checkVirtuemartCustoms();
+
+        $count = count($this->products);
+        $stat = OasisHelper::getOasisStat();
+
+        $this->cf->progressStart($stat->products, $count);
+
+        $group_ids = [];
+
+        foreach ($this->products as $product) {
+            $group_ids[$product->group_id][$product->id] = $product;
+        }
+
+        if ($group_ids) {
+            foreach ($group_ids as $group_id => $products) {
+                $this->cf->log('Начало обработки модели '.$this->cf->progress['step_total'].'-'.($this->cf->progress['step_item'] + 1));
+
+                if (count($products) === 1) {
+                    $product = reset($products);
+
+                    $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                        'product_parent_id' => 0,
+                        'product_sku'       => $product->article,
+                    ]);
+
+                    if (is_null($dbProductId)) {
+                        $dbProductId = $this->addProduct($product);
+
+                        $this->cf->log('OAId='.$product->id.' add JId=' . $dbProductId);
+                    } else {
+                        $this->editProduct($dbProductId, $product);
+                        $this->cf->log('OAId='.$product->id.' updated JId=' . $dbProductId);
+                    }
+                    $this->cf->progressUp();
+                } else {
+                    $firstProduct = reset($products);
+                    $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                        'product_parent_id' => 0,
+                        'product_sku'       => $firstProduct->article,
+                    ]);
+
+                    if (is_null($dbFirstProductId)) {
+                        $dbFirstProductId = $this->addProduct($firstProduct, true);
+                        $this->cf->log('Parent OAId='.$firstProduct->id.' add JId=' . $dbFirstProductId);
+                    } else {
+                        $this->editProduct($dbFirstProductId, $firstProduct, true);
+                        $this->cf->log('Parent OAId='.$firstProduct->id.' updated JId=' . $dbFirstProductId);
+                    }
+
+                    foreach ($products as $product) {
+                        $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                            'product_parent_id' => $dbFirstProductId,
+                            'product_sku'       => $product->article,
+                        ]);
+
+                        if (is_null($dbProductId)) {
+                            $dbProductId = $this->addProductChild($dbFirstProductId, $product);
+                            $this->cf->log('  Child OAId='.$product->id.' add JId=' . $dbProductId);
+                        } else {
+                            $this->editProductChild($dbProductId, $product);
+                            $this->cf->log('  Child OAId='.$product->id.' edit JId=' . $dbProductId);
+                        }
+                        $this->cf->progressUp();
+                    }
+                }
+            }
+        }
+
+        $productsOasis = $this->model->getData('#__oasis_product', ['article'], [], false, 'loadAssocList');
+
+        foreach ($productsOasis as $productOasis) {
+            if (is_null($this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], ['product_sku' => $productOasis['article']]))) {
+                $this->model->deleteData('#__oasis_product', ['article' => $productOasis['article']]);
+            }
+        }
+
+        $this->cf->progressEnd();
+    }
+
 
     /**
      * Update product stock
@@ -334,6 +260,8 @@ class Command extends \Joomla\Console\Command\AbstractCommand
      */
     private function upStock()
     {
+        $this->cf->log('Start update stock');
+        //TODO проверить обновление остатков
         $stock = OasisHelper::getOasisStock();
 
         foreach ($stock as $item) {
@@ -403,7 +331,10 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     {
         $this->editVirtuemartProducts($vmProductId, $product);
         $this->virtuemartProductsLang($vmProductId, $product, false, true);
-        $this->virtuemartProductCategories($vmProductId, $product);
+
+        if(!$this->cf->is_not_up_cat)
+            $this->virtuemartProductCategories($vmProductId, $product);
+
         $this->virtuemartProductManufacturers($vmProductId, $product);
         $this->virtuemartProductPrices($vmProductId, $product);
 
@@ -722,7 +653,7 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     public function virtuemartProductCategories($product_id, $product)
     {
         $vmProductCategories = $this->model->getData('#__virtuemart_product_categories', ['virtuemart_category_id'], ['virtuemart_product_id' => $product_id], false, 'loadAssocList');
-        $productCategories = $this->getArrCategories($product->full_categories);
+        $productCategories = $this->getProductCategories($product->categories);
 
         if (!$vmProductCategories) {
             foreach ($productCategories as $productCategory) {
@@ -750,6 +681,64 @@ class Command extends \Joomla\Console\Command\AbstractCommand
             }
         }
         unset($productCategory);
+    }
+
+    public function getProductCategories(array $categories_oasis): array
+    {
+        $result = [];
+        foreach ($categories_oasis as $categoryId) {
+            $rel_id = $this->cf->getRelCategoryId($categoryId);
+            if(isset($rel_id)){
+                $result = array_merge($result, $this->getCategoryParents($rel_id));
+            }
+            else{
+                $full_categories = $this->getOasisParentsCategoriesId($categoryId);
+
+                foreach ($full_categories as $cat_id) {
+                    $result[] = $this->getVmCategoryId($cat_id);
+                }
+            }
+        }
+        return $result;
+    }
+
+    public function getCategoryParents($cat_id): array {
+        $parents = [$cat_id];
+        while($cat_id != 0){
+            $category_parent_id = $this->model->getData('#__virtuemart_categories', ['category_parent_id'], ['virtuemart_category_id' => $cat_id]);
+            if($category_parent_id){
+                $parents []= $category_parent_id;
+                $cat_id = $category_parent_id;
+            }
+            else{
+                break;
+            }
+        }
+        return array_reverse($parents);
+    }
+
+    /**
+     * Get oasis parents id categories
+     *
+     * @param null $cat_id
+     *
+     * @return array
+     */
+    public function getOasisParentsCategoriesId($cat_id): array {
+        $result = [];
+        $parent_id = $cat_id;
+
+        while($parent_id){
+            foreach ($this->categories as $category) {
+                if ($parent_id == $category->id) {
+                    array_unshift($result, $category->id);
+                    $parent_id = $category->parent_id;
+                    continue 2;
+                }
+            }
+            break;
+        }
+        return $result;
     }
 
     /**
@@ -888,14 +877,14 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     {
         $vmProductPrice = $this->model->getData('#__virtuemart_product_prices', ['*'], ['virtuemart_product_id' => $product_id], false, 'loadAssocList');
 
-        $price = !empty($this->priceDealer) ? $product->discount_price : $product->price;
+        $price = $this->cf->is_price_dealer ? $product->discount_price : $product->price;
 
-        if (!empty($this->priceFactor)) {
-            $price = $price * $this->priceFactor;
+        if (!empty($this->cf->price_factor)) {
+            $price = $price * $this->cf->price_factor;
         }
 
-        if (!empty($this->priceIncrease)) {
-            $price = $price + $this->priceIncrease;
+        if (!empty($this->cf->price_increase)) {
+            $price = $price + $this->cf->price_increase;
         }
 
         if (!$vmProductPrice) {
@@ -1076,28 +1065,6 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         }
 
         return $slug;
-    }
-
-    /**
-     * @param $product_categories
-     * @return array
-     *
-     * @since 4.0
-     */
-    public function getArrCategories($product_categories): array
-    {
-        $result = [];
-        foreach ($product_categories as $category) {
-            $vmCategoryId = $this->getVmCategoryId($category);
-            $needed_cat = array_search($vmCategoryId, $result);
-
-            if ($needed_cat === false) {
-                $result[] = $vmCategoryId;
-            }
-        }
-        unset($category, $needed_cat);
-
-        return $result;
     }
 
     /**

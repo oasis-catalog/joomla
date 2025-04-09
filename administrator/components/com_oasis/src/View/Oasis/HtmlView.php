@@ -4,13 +4,14 @@ namespace Oasiscatalog\Component\Oasis\Administrator\View\Oasis;
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\Document\Document;
 use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\Config as OasisConfig;
 
 /**
  * @package     Oasis
@@ -62,25 +63,31 @@ class HtmlView extends BaseHtmlView
      */
     public function display($tpl = null)
     {
-        $params = ComponentHelper::getParams('com_oasis');
-        $api_key = $params->get('oasis_api_key');
+        $cf = OasisConfig::instance(['init' => true]);
+        $api_success = false;
 
-        if (isset($api_key) && $api_key !== '') {
-            $currencies = (bool)OasisHelper::getOasisCurrencies();
-
-            if ($currencies) {
+        if (!empty($cf->api_key)) {
+            $api_success = $cf->checkApi();
+            if ($api_success) {
                 $this->form = $this->get('Form');
             }
         }
 
-        if (isset($currencies) && $currencies) {
+        if ($api_success) {
             $this->addToolbar();
             parent::display($tpl);
         } else {
             $this->addToolbar(false);
             echo '<div class="alert alert-danger text-center" role="alert"><span class="icon-info"> </span> ' . Text::_('COM_OASIS_TEXT_NOT_VALID', true) . '</div>';
         }
-        $this->setDocument();
+        $document = Factory::getDocument();
+        $document->setTitle(Text::_('COM_OASIS_TITLE'));
+        $wa = $document->getWebAssetManager();
+        $wa->useScript('jquery')
+            ->useScript('bootstrap.modal');
+        $wa->registerAndUseStyle('com_oasis.css', URI::base() . 'components/com_oasis/assets/css/stylesheet.css', [], [], []);
+        $wa->registerAndUseScript('com_oasis.tree', URI::base() . 'components/com_oasis/assets/js/tree.js', [], [], []);
+        $wa->registerAndUseScript('com_oasis.common', URI::base() . 'components/com_oasis/assets/js/common.js', [], [], []);
     }
 
     /**
@@ -99,17 +106,5 @@ class HtmlView extends BaseHtmlView
         }
 
         ToolbarHelper::preferences('com_oasis');
-    }
-
-    /**
-     * @since 4.0
-     */
-    private function setDocument()
-    {
-        $document = Factory::getApplication()->getDocument();
-        $document->setTitle(Text::_('COM_OASIS_TITLE'));
-
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->registerAndUseStyle('oasis', URI::base() . 'components/com_oasis/assets/css/stylesheet.css', [], [], []);
     }
 }

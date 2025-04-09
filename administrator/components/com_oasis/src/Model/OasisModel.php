@@ -11,11 +11,11 @@
 
 namespace Oasiscatalog\Component\Oasis\Administrator\Model;
 
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\Config as OasisConfig;
 use VmConfig;
 
 defined('_JEXEC') or die;
@@ -75,7 +75,7 @@ class OasisModel extends AdminModel
      */
     public function getForm($data = [], $loadData = true)
     {
-         Form::addFormPath(JPATH_ADMINISTRATOR . '/components/com_oasis/tmpl/oasis/');
+        Form::addFormPath(JPATH_ADMINISTRATOR . '/components/com_oasis/tmpl/oasis/');
 
         $form = $this->loadForm(
             'com_oasis.oasis',
@@ -102,23 +102,24 @@ class OasisModel extends AdminModel
      */
     protected function loadFormData(): array
     {
-        $params = ComponentHelper::getParams('com_oasis');
+        $cf = OasisConfig::instance(['init' => true]);
 
         return [
-            'oasis_currency'         => $params->get('oasis_currency'),
-            'oasis_no_vat'           => $params->get('oasis_no_vat'),
-            'oasis_not_on_order'     => $params->get('oasis_not_on_order'),
-            'oasis_price_from'       => $params->get('oasis_price_from'),
-            'oasis_price_to'         => $params->get('oasis_price_to'),
-            'oasis_rating'           => $params->get('oasis_rating'),
-            'oasis_warehouse_moscow' => $params->get('oasis_warehouse_moscow'),
-            'oasis_warehouse_europe' => $params->get('oasis_warehouse_europe'),
-            'oasis_remote_warehouse' => $params->get('oasis_remote_warehouse'),
-            'oasis_limit'            => $params->get('oasis_limit'),
-            'oasis_factor'           => $params->get('oasis_factor'),
-            'oasis_increase'         => $params->get('oasis_increase'),
-            'oasis_dealer'           => $params->get('oasis_dealer'),
-            'oasis_categories'       => $params->get('oasis_categories'),
+            'currency' =>           $cf->currency,
+            'is_no_vat' =>          $cf->is_no_vat,
+            'is_not_on_order' =>    $cf->is_not_on_order,
+            'price_from' =>         $cf->price_from,
+            'price_to' =>           $cf->price_to,
+            'rating' =>             $cf->rating,
+            'is_wh_moscow' =>       $cf->is_wh_moscow,
+            'is_wh_europe' =>       $cf->is_wh_europe,
+            'is_wh_remote' =>       $cf->is_wh_remote,
+            'limit' =>              $cf->limit,
+            'price_factor' =>       $cf->price_factor,
+            'price_increase' =>     $cf->price_increase,
+            'is_price_dealer' =>    $cf->is_price_dealer,
+            'is_not_up_cat' =>      $cf->is_not_up_cat,
+            'is_import_anytime' =>  $cf->is_import_anytime
         ];
     }
 
@@ -142,42 +143,6 @@ class OasisModel extends AdminModel
         }
 
         return $result;
-    }
-
-    /**
-     * @param $params
-     *
-     * @since 4.0
-     */
-    public function editOasisParams($params)
-    {
-        $query = $this->db->getQuery(true);
-        $query->update($this->db->quoteName('#__extensions'));
-        $query->set($this->db->quoteName('params') . ' = ' . $this->db->quote((string)$params));
-        $query->where($this->db->quoteName('element') . ' = ' . $this->db->quote('com_oasis'));
-        $query->where($this->db->quoteName('type') . ' = ' . $this->db->quote('component'));
-        $this->db->setQuery($query);
-        $this->db->execute();
-    }
-
-    /**
-     * @param $limit
-     *
-     * @since 4.0
-     */
-    public function editOasisProgress($limit)
-    {
-        $params = ComponentHelper::getParams('com_oasis');
-
-        $progress_item = $params->get('progress_item');
-        $params->set('progress_item', ++$progress_item);
-
-        if (!empty($limit)) {
-            $progress_step_item = $params->get('progress_step_item');
-            $params->set('progress_step_item', ++$progress_step_item);
-        }
-
-        $this->editOasisParams($params);
     }
 
     /**

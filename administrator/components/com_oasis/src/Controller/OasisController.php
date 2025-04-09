@@ -4,10 +4,13 @@ namespace Oasiscatalog\Component\Oasis\Administrator\Controller;
 
 defined('_JEXEC') or die;
 
+
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
+
 
 /**
  * @package     Oasis
@@ -29,38 +32,78 @@ class OasisController extends BaseController
      */
     public function apply()
     {
-        $data['oasis_currency'] = $_POST['jform']['oasis_currency'] ?? 'rub';
-        $data['oasis_no_vat'] = $_POST['jform']['oasis_no_vat'] ?? 0;
-        $data['oasis_not_on_order'] = $_POST['jform']['oasis_not_on_order'] ?? '';
-        $data['oasis_price_from'] = $_POST['jform']['oasis_price_from'] ?? '';
-        $data['oasis_price_to'] = $_POST['jform']['oasis_price_to'] ?? '';
-        $data['oasis_rating'] = $_POST['jform']['oasis_rating'] ?? '';
-        $data['oasis_warehouse_moscow'] = $_POST['jform']['oasis_warehouse_moscow'] ?? '';
-        $data['oasis_warehouse_europe'] = $_POST['jform']['oasis_warehouse_europe'] ?? '';
-        $data['oasis_remote_warehouse'] = $_POST['jform']['oasis_remote_warehouse'] ?? '';
-        $data['oasis_limit'] = $_POST['jform']['oasis_limit'] ?? '';
-        $data['oasis_factor'] = $_POST['jform']['oasis_factor'] ?? '';
-        $data['oasis_increase'] = $_POST['jform']['oasis_increase'] ?? '';
-        $data['oasis_dealer'] = $_POST['jform']['oasis_dealer'] ?? '';
-        $data['oasis_step'] = $_POST['jform']['oasis_step'] ?? '';
-        $data['oasis_categories'] = $_POST['jform']['oasis_categories'] ?? [];
-        $data['oasis_host'] = $_POST['jform']['oasis_host'] ?? '';
+        $post = $_POST['jform'] ?? [];
+        $data = [
+            'currency' => $post['currency'] ?? 'rub',
+            'limit' => $post['limit'] ?? '',
+            'categories' => $post['categories'] ?? [],
+            'categories_rel' => $post['categories_rel'] ?? [],
+            'is_no_vat' => $post['is_no_vat'] ?? 0,
+            'is_not_on_order' => $post['is_not_on_order'] ?? '',
+            'price_from' => $post['price_from'] ?? '',
+            'price_to' => $post['price_to'] ?? '',
+            'rating' => $post['rating'] ?? '',
+            'is_wh_moscow' => $post['is_wh_moscow'] ?? '',
+            'is_wh_europe' => $post['is_wh_europe'] ?? '',
+            'is_wh_remote' => $post['is_wh_remote'] ?? '',
+            'price_factor' => $post['price_factor'] ?? '',
+            'price_increase' => $post['price_increase'] ?? '',
+            'is_price_dealer' => $post['is_price_dealer'] ?? '',
+            'is_not_up_cat' => $post['is_not_up_cat'] ?? '',
+            'is_import_anytime' => $post['is_import_anytime'] ?? '',
+
+            // clear progress
+            'progress_total' => 0,
+            'progress_step' => 0,
+            'progress_item' => 0,
+            'progress_step_item' => 0,
+            'progress_step_total' => 0,
+        ];
 
         $params = ComponentHelper::getParams('com_oasis');
 
         foreach ($data as $key => $value) {
             $params->set($key, $value);
-            $db = Factory::getContainer()->get('DatabaseDriver');
-            $query = $db->getQuery(true);
-            $query->update($db->quoteName('#__extensions'));
-            $query->set($db->quoteName('params') . ' = ' . $db->quote((string)$params));
-            $query->where($db->quoteName('element') . ' = ' . $db->quote('com_oasis'));
-            $query->where($db->quoteName('type') . ' = ' . $db->quote('component'));
-            $db->setQuery($query);
-            $db->execute();
         }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true);
+        $query->update($db->quoteName('#__extensions'));
+        $query->set($db->quoteName('params') . ' = ' . $db->quote((string)$params));
+        $query->where($db->quoteName('element') . ' = ' . $db->quote('com_oasis'));
+        $query->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+        $db->setQuery($query);
+        $db->execute();
 
         $this->setRedirect('index.php?option=com_oasis', Text::_('COM_OASIS_OPTION_SAVE'), 'Message');
         $this->redirect();
+    }
+
+
+    public function get_all_categories() {
+        if (!class_exists('vmCustomPlugin')){
+            require(JPATH_ROOT .'/administrator/components/com_virtuemart/helpers/config.php');
+            if(class_exists('VmConfig')) \VmConfig::loadConfig();
+        }
+
+        $categoryModel = \VmModel::getModel('Category');
+        $cats = $categoryModel->getCategoryTree(0, -1, false);
+        $arr = [];
+        foreach ($cats as $cat) {
+            if (empty($arr[$cat->category_parent_id])) {
+                $arr[$cat->category_parent_id] = [];
+            }
+            $arr[$cat->category_parent_id][] = [
+                'id' => $cat->virtuemart_category_id,
+                'name' => $cat->category_name,
+            ];
+        }
+
+        echo '<div class="oa-tree">
+            <div class="oa-tree-ctrl">
+                <button type="button" class="btn btn-sm btn-light oa-tree-ctrl-m">'.Text::_('COM_OASIS_BTN_COLLAPSE_ALL', true).'</button>
+                <button type="button" class="btn btn-sm btn-light oa-tree-ctrl-p">'.Text::_('COM_OASIS_BTN_EXPAND_ALL', true).'</button>
+            </div>' . OasisHelper::buildTreeRadioCats($arr) . '</div>';
+        exit();
     }
 }

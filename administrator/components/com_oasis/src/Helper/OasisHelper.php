@@ -11,8 +11,9 @@
 
 namespace Oasiscatalog\Component\Oasis\Administrator\Helper;
 
-use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
+use Oasiscatalog\Component\Oasis\Administrator\Helper\Config as OasisConfig;
+
 
 defined('_JEXEC') or die;
 
@@ -26,24 +27,7 @@ defined('_JEXEC') or die;
  */
 final class OasisHelper
 {
-    /**
-     * Database connector
-     *
-     * @var    DatabaseDriver
-     *
-     * @since 4.0
-     */
-    protected $db;
-
-    /**
-     * Public class constructor
-     *
-     * @since 4.0
-     */
-    public function __construct()
-    {
-        $this->db = Factory::getContainer()->get('DatabaseDriver');
-    }
+    public static OasisConfig $cf;
 
     /**
      * Search object in array
@@ -77,43 +61,28 @@ final class OasisHelper
      */
     public static function getOasisProducts(array $args = [])
     {
-        $params = ComponentHelper::getParams('com_oasis');
-
         $args['fieldset'] = 'full';
 
         $data = [
-            'currency'     => $params->get('oasis_currency'),
-            'no_vat'       => $params->get('oasis_no_vat'),
-            'not_on_order' => $params->get('oasis_not_on_order'),
-            'price_from'   => $params->get('oasis_price_from'),
-            'price_to'     => $params->get('oasis_price_to'),
-            'rating'       => $params->get('oasis_rating'),
-            'moscow'       => $params->get('oasis_warehouse_moscow'),
-            'europe'       => $params->get('oasis_warehouse_europe'),
-            'remote'       => $params->get('oasis_remote_warehouse'),
+            'currency'     => self::$cf->currency,
+            'no_vat'       => self::$cf->is_no_vat,
+            'not_on_order' => self::$cf->is_not_on_order,
+            'price_from'   => self::$cf->price_from,
+            'price_to'     => self::$cf->price_to,
+            'rating'       => self::$cf->rating,
+            'moscow'       => self::$cf->is_wh_moscow,
+            'europe'       => self::$cf->is_wh_europe,
+            'remote'       => self::$cf->is_wh_remote,
+            'category'      => implode(',', empty(self::$cf->categories) ? OasisHelper::getOasisMainCategories() : self::$cf->categories)
         ];
-
-        $category = $params->get('oasis_categories');
-
-        if (!$args['category'] && $category) {
-            $data['category'] = implode(',', $category);
-        } elseif (!$args['category'] && !$category) {
-            $categories = OasisHelper::getOasisCategories();
-
-            foreach ($categories as $item) {
-                if ($item->level === 1) {
-                    $category[] = $item->id;
-                }
-            }
-
-            $data['category'] = implode(',', $category);
-        }
 
         foreach ($data as $key => $value) {
             if ($value) {
                 $args[$key] = $value;
             }
         }
+
+        // print_r($args);
 
         return OasisHelper::curlQuery('v4/', 'products', $args);
     }
@@ -127,32 +96,22 @@ final class OasisHelper
      */
     public static function getOasisStat()
     {
-        $params = ComponentHelper::getParams('com_oasis');
-
         $data = [
-            'not_on_order' => $params->get('oasis_not_on_order'),
-            'price_from'   => $params->get('oasis_price_from'),
-            'price_to'     => $params->get('oasis_price_to'),
-            'rating'       => $params->get('oasis_rating') ?? '0,1,2,3,4,5',
-            'moscow'       => $params->get('oasis_warehouse_moscow'),
-            'europe'       => $params->get('oasis_warehouse_europe'),
-            'remote'       => $params->get('oasis_remote_warehouse'),
+            'not_on_order' => self::$cf->is_not_on_order,
+            'price_from'   => self::$cf->price_from,
+            'price_to'     => self::$cf->price_to,
+            'rating'       => self::$cf->rating ?? '0,1,2,3,4,5',
+            'moscow'       => self::$cf->is_wh_moscow,
+            'europe'       => self::$cf->is_wh_europe,
+            'remote'       => self::$cf->is_wh_remote,
+            'category'     => implode(',', empty(self::$cf->categories) ? OasisHelper::getOasisMainCategories() : self::$cf->categories)
         ];
-
-        $category = $params->get('oasis_categories');
-
-        if ($category) {
-            $data['category'] = implode(',', $category);
-        } else {
-            $data['category'] = implode(',', OasisHelper::getOasisMainCategories());
-        }
-
+        $args = [];
         foreach ($data as $key => $value) {
             if ($value) {
                 $args[$key] = $value;
             }
         }
-
         return self::curlQuery('v4/','stat', $args);
     }
 
@@ -175,6 +134,107 @@ final class OasisHelper
         }
 
         return $result;
+    }
+
+    /**
+     * Build tree categories
+     *
+     * @param $data
+     * @param array $checkedArr
+     * @param array $relCategories
+     * @param int $parent_id
+     *
+     * @return string
+     */
+    public static function buildTreeCats( $data, array $checkedArr = [], array $relCategories = [], int $parent_id = 0 ): string {
+        $treeItem = '';
+        if ( ! empty( $data[ $parent_id ] ) ) {
+            foreach($data[ $parent_id ] as $item){
+                $checked = in_array( $item['id'], $checkedArr ) ? ' checked' : '';
+
+                $rel_cat = $relCategories[$item['id']] ?? null;
+                $rel_label = '';
+                $rel_value = '';
+                if($rel_cat){
+                    $rel_value = $item['id'].'_'.$rel_cat['id'];
+                    $rel_label = $rel_cat['rel_label'];
+                }
+
+                $treeItemChilds = self::buildTreeCats( $data, $checkedArr, $relCategories, $item['id'] );
+
+                if(empty($treeItemChilds)){
+                    $treeItem .= '<div class="oa-tree-leaf">
+                        <div class="oa-tree-label ' . ($rel_value ? 'relation-active' : '') . '">
+                            <input type="hidden" class="oa-tree-inp-rel" name="jform[categories_rel][]" value="' . $rel_value . '" />
+                            <label>
+                                <input type="checkbox" class="oa-tree-cb-cat" name="jform[categories][]" value="' . $item['id'] . '"' . $checked . '/>
+                                <div class="oa-tree-btn-relation"></div>' . $item['name'] . '
+                            </label>
+                            <div class="oa-tree-dashed"></div>
+                            <div class="oa-tree-relation">' . $rel_label . '</div>
+                        </div>
+                    </div>';
+                }
+                else{
+                    $treeItem .= '<div class="oa-tree-node oa-tree-collapsed">
+                        <div class="oa-tree-label ' . ($rel_value ? 'relation-active' : '') . '">
+                            <input type="hidden" class="oa-tree-inp-rel"  name="jform[categories_rel][]" value="' . $rel_value . '" />
+                            <span class="oa-tree-handle-p">+</span>
+                            <span class="oa-tree-handle-m">-</span>
+                            <label>
+                                <input type="checkbox" class="oa-tree-cb-cat" name="jform[categories][]" value="' . $item['id'] . '"' . $checked . '/>
+                                <div class="oa-tree-btn-relation"></div>' . $item['name'] . '
+                            </label>
+                            <div class="oa-tree-dashed"></div>
+                            <div class="oa-tree-relation">' . $rel_label . '</div>
+                        </div>
+                        <div class="oa-tree-childs">' . $treeItemChilds . '</div>
+                    </div>';
+                }
+            }
+        }
+
+        return $treeItem ?? '';
+    }
+
+    /**
+     * Build tree categories
+     *
+     * @param $data
+     * @param int $checked_id
+     * @param int $parent_id
+     *
+     * @return string
+     */
+    public static function buildTreeRadioCats( $data, array $checked_id = null, int $parent_id = 0 ): string {
+        $treeItem = '';
+        if ( ! empty( $data[ $parent_id ] ) ) {
+            foreach($data[ $parent_id ] as $item){
+                $checked = $checked_id === $item['id'];
+
+                $treeItemChilds = self::buildTreeRadioCats( $data, $checked_id, $item['id'] );
+
+                if(empty($treeItemChilds)){
+                    $treeItem .= '<div class="oa-tree-leaf">
+                        <div class="oa-tree-label">
+                            <label><input type="radio" name="oasis_radio_tree" value="' . $item['id'] . '"' . $checked . '/>' . $item['name'] . '</label>
+                        </div>
+                    </div>';
+                }
+                else{
+                    $treeItem .= '<div class="oa-tree-node oa-tree-collapsed">
+                        <div class="oa-tree-label">
+                            <span class="oa-tree-handle-p">+</span>
+                            <span class="oa-tree-handle-m">-</span>
+                            <label><input type="radio" name="oasis_radio_tree" value="' . $item['id'] . '"' . $checked . '/>' . $item['name'] . '</label>
+                        </div>
+                        <div class="oa-tree-childs">' . $treeItemChilds . '</div>
+                    </div>';
+                }
+            }
+        }
+
+        return $treeItem ?? '';
     }
 
     /**
@@ -266,10 +326,8 @@ final class OasisHelper
      */
     public static function curlQuery($version, $type, array $args = [])
     {
-        $params = ComponentHelper::getParams('com_oasis');
-
         $args_pref = [
-            'key'    => $params->get('oasis_api_key'),
+            'key'    => self::$cf->api_key,
             'format' => 'json',
         ];
         $args = array_merge($args_pref, $args);
