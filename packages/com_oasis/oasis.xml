@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<extension type="component" method="upgrade">
+	<name>com_oasis</name>
+	<creationDate>06 March 2023</creationDate>
+	<author>Oasis Team</author>
+	<authorEmail>info@oasiscatalog.com</authorEmail>
+	<authorUrl>https://www.oasiscatalog.com/</authorUrl>
+	<copyright>Copyright (C) 2023 Oasiscatalog. All rights reserved.</copyright>
+	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
+	<version>4.2</version>
+	<description>COM_OASIS_XML_DESCRIPTION</description>
+	<scriptfile>script.php</scriptfile>
+	<namespace path="src">Oasiscatalog\Component\Oasis</namespace>
+	<install>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+		</sql>
+	</install>
+	<uninstall>
+		<sql>
+			<file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+		</sql>
+	</uninstall>
+	<administration>
+		<!-- Menu entries -->
+		<menu link="index.php?option=com_oasis">COM_OASIS</menu>
+
+		<!-- Core files -->
+		<files folder="admin">
+			<filename>config.xml</filename>
+			<folder>assets</folder>
+			<folder>forms</folder>
+			<folder>services</folder>
+			<folder>sql</folder>
+			<folder>src</folder>
+			<folder>tmpl</folder>
+		</files>
+		<languages folder="admin">
+			<language tag="en-GB">language/en-GB/com_oasis.ini</language>
+			<language tag="en-GB">language/en-GB/com_oasis.sys.ini</language>
+			<language tag="ru-RU">language/ru-RU/com_oasis.ini</language>
+			<language tag="ru-RU">language/ru-RU/com_oasis.sys.ini</language>
+		</languages>
+	</administration>
+</extension>

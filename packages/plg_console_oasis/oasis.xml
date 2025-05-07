@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="1.0" type="plugin" group="console" method="upgrade">
+	<name>plg_console_oasis</name>
+	<author>Oasis Team</author>
+	<creationDate>February 2023</creationDate>
+	<copyright>Copyright © 2023 Ever. All rights reserved.</copyright>
+	<license>https://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+	<authorEmail>info@oasiscatalog.com</authorEmail>
+	<authorUrl>https://www.oasiscatalog.com/</authorUrl>
+	<version>4.2</version>
+	<description>PLG_CONSOLE_OASIS_DESCRIPTION</description>
+	<namespace path="src">Joomla\Plugin\Console\Oasis</namespace>
+	<scriptfile>script.php</scriptfile>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_console_oasis.ini</language>
+		<language tag="en-GB">en-GB/plg_console_oasis.sys.ini</language>
+		<language tag="ru-RU">ru-RU/plg_console_oasis.ini</language>
+		<language tag="ru-RU">ru-RU/plg_console_oasis.sys.ini</language>
+	</languages>
+	<files>
+		<folder>services</folder>
+		<folder plugin="oasis">src</folder>
+	</files>
+</extension>

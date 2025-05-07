@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Oasiscatalog\Component\Oasis\Administrator\Field">
+    <fieldset name="options" label="COM_OASIS_OPTION">
+        <field name="categories" type="treecheckbox" label="Категории" description="Дерево категорий"/>
+        <field name="is_not_up_cat" type="checkbox" label="Не обновлять категории" />
+        <field name="is_cdn_photo" type="checkbox" label="Использовать сервер Oasis для изображений" />
+        <field name="is_up_photo" type="checkbox" label="Обновлять фото товаров" />
+        <field name="currency" type="list" label="Валюта" description="Валюта для загрузки">
+            <option value="rub">Российский рубль</option>
+            <option value="usd">Доллар США</option>
+            <option value="eur">Евро</option>
+            <option value="byn">Белорусский рубль</option>
+            <option value="uah">Гривна</option>
+            <option value="kgs">Киргизский Сом</option>
+            <option value="kzt">Тенге</option>
+        </field>
+        <field name="is_no_vat" type="checkbox" label="Без НДС" description="Загрузка товаров без НДС" value="1"/>
+        <field name="is_not_on_order" type="checkbox" label="Под заказ" description="Без товаров (под заказ)" value="1"/>
+        <field name="price_from" type="number" label="Цена от" description="Загружать товары с ценой от"/>
+        <field name="price_to" type="number" label="Цена до" description="Загружать товары с ценой до"/>
+        <field name="rating" type="list" label="Тип" description="Типы товаров">
+            <option>-</option>
+            <option value="1">Только новинки</option>
+            <option value="2">Только хиты</option>
+            <option value="3">Только со скидкой</option>
+        </field>
+        <field name="is_wh_moscow" type="checkbox" label="На складе в Москве" description="Загружать товары на складе в Москве" value="1"/>
+        <field name="is_wh_europe" type="checkbox" label="На складе в Европе" description="Загружать товары на складе в Европе" value="1"/>
+        <field name="is_wh_remote" type="checkbox" label="На удаленном складе" description="Загружать товары на удаленном складе" value="1"/>
+        <field name="limit" type="number" label="Лимит" description="Лимит единовременной загрузки товаров"/>
+        <field name="is_import_anytime" type="checkbox" label="Не ограничивать обновление" description="Использовать в качестве базовой цены диллерские цены"/>
+        <field name="price_factor" type="number" step="0.01" label="Коэффициент цены" description="Коэффициент на который будет умножена базовая цена"/>
+        <field name="price_increase" type="number" step="0.01" label="Надбавка к цене" description="Надбавка которая будет добавленая к базовой цене"/>
+        <field name="is_price_dealer" type="checkbox" label="Использовать диллерские цены" description="Использовать в качестве базовой цены диллерские цены"/>
+    </fieldset>
+    <fieldset name="orders" label="COM_OASIS_ORDER">
+        <field name="oasis_orders" type="orders" label="Заказы" description="Список заказов"/>
+    </fieldset>
+</form>

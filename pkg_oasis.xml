@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="package" version="4.0" method="upgrade">
+  <name>Oasis Package</name>
+  <author>Oasis Team</author>
+  <creationDate>06 March 2023</creationDate>
+  <packagename>oasis</packagename>
+  <version>4.2</version>
+  <url>https://www.oasiscatalog.com/</url>
+  <packager>Oasis Team</packager>
+  <packagerurl>https://www.oasiscatalog.com/</packagerurl>
+  <description>Oasis Import package</description>
+  <files folder="packages">
+    <file type="component" id="com_oasis" client="administrator" >com_oasis.zip</file>
+    <file type="plugin" id="plg_console_oasis" client="site" >plg_console_oasis.zip</file>
+    <file type="plugin" id="plg_system_oasis" client="site" >plg_system_oasis.zip</file>
+  </files>
+ </extension>
