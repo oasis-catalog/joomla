@@ -1,15 +1,4 @@
 <?php
-
-/**
- * @package     Oasis
- * @subpackage  Administrator
- *
- * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://www.oasiscatalog.com/
- */
-
 defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;

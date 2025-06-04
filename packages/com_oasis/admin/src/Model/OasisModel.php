@@ -1,14 +1,4 @@
 <?php
-/**
- * @package     Oasis
- * @subpackage  Administrator
- *
- * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://www.oasiscatalog.com/
- */
-
 namespace Oasiscatalog\Component\Oasis\Administrator\Model;
 
 use Joomla\CMS\Factory;
@@ -120,6 +110,7 @@ class OasisModel extends AdminModel
             'is_price_dealer' =>    $cf->is_price_dealer,
             'is_not_up_cat' =>      $cf->is_not_up_cat,
             'is_cdn_photo' =>       $cf->is_cdn_photo,
+            'is_fast_import' =>     $cf->is_fast_import,
             'is_up_photo' =>        $cf->is_up_photo,
             'is_import_anytime' =>  $cf->is_import_anytime
         ];

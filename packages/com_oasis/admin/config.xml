@@ -18,6 +18,7 @@
 		<field name="is_price_dealer" type="hidden" default=""/>
 		<field name="is_not_up_cat" type="hidden" default=""/>
 		<field name="is_cdn_photo" type="hidden" default=""/>
+		<field name="is_fast_import" type="hidden" default=""/>
 		<field name="is_up_photo" type="hidden" default=""/>
 		<field name="is_import_anytime" type="hidden" default=""/>
 	</fieldset>

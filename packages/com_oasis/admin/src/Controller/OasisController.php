@@ -12,16 +12,6 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Oasiscatalog\Component\Oasis\Administrator\Helper\OasisHelper;
 
 
-/**
- * @package     Oasis
- * @subpackage  Administrator
- *
- * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://www.oasiscatalog.com/
- * @since 4.0
- */
 class OasisController extends BaseController
 {
 
@@ -51,6 +41,7 @@ class OasisController extends BaseController
             'is_price_dealer' =>    $post['is_price_dealer'] ?? '',
             'is_not_up_cat' =>      $post['is_not_up_cat'] ?? '',
             'is_cdn_photo' =>       $post['is_cdn_photo'] ?? '',
+            'is_fast_import' =>     $post['is_fast_import'] ?? '',
             'is_up_photo' =>        $post['is_up_photo'] ?? '',
             'is_import_anytime' =>  $post['is_import_anytime'] ?? '',
 

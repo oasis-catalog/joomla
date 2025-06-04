@@ -53,6 +53,7 @@ class Config {
 
 	public bool $is_up_photo;
 	public bool $is_cdn_photo;
+	public bool $is_fast_import;
 	public bool $is_delete_exclude;
 
 	private bool $is_init = false;
@@ -151,6 +152,7 @@ class Config {
 		$this->category_rel_label = 	'';
 		$this->is_not_up_cat =			!empty($opt['is_not_up_cat']);
 		$this->is_cdn_photo =			!empty($opt['is_cdn_photo']);
+		$this->is_fast_import =			!empty($opt['is_fast_import']);
 		$this->is_up_photo =			!empty($opt['is_up_photo']);
 
 		$this->is_no_vat =				!empty($opt['is_no_vat']);
@@ -216,25 +218,37 @@ class Config {
 		$dt = (new \DateTime())->format('d.m.Y H:i:s');
 		$this->progress['date_step'] = $dt;
 
-		if($this->limit > 0){
+		$is_full_import = false;
+		if ($this->limit > 0) {
 			$this->progress['item'] += $this->progress['step_item'];
 
 			if(($this->limit * ($this->progress['step'] + 1)) > $this->progress['total']){
 				$this->progress['step'] = 0;
-				$this->progress['item'] = 0;
-				$this->progress['date'] = $dt;
+				$is_full_import = true;
 			}
 			else{
 				$this->progress['step']++;
 			}
 		}
-		else{
-			$this->progress['date'] = $dt;
-			$this->progress['item'] = 0;
+		else {
+			$is_full_import = true;
 		}
 
 		$this->progress['step_item'] = 0;
 		$this->progress['step_total'] = 0;
+
+		if($is_full_import) {
+			$this->progress['item'] = 0;
+			$this->progress['date'] = $dt;
+
+			if($this->is_fast_import) {
+				$this->is_fast_import = false;
+
+				$params = ComponentHelper::getParams('com_oasis') ?? [];
+				$params->set('is_fast_import', false);
+		        $this->saveParams($params);
+			}
+		}
 
 		$this->updateSettingProgress();
 	}
@@ -252,14 +266,17 @@ class Config {
 		$this->updateSettingProgress();
 	}
 
-	private function updateSettingProgress () {
+	private function updateSettingProgress() {
 		$params = ComponentHelper::getParams('com_oasis');
 
         foreach ($this->progress as $key => $value) {
             $params->set('progress_'.$key, $value);
         }
+        $this->saveParams($params);
+	}
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
+	private function saveParams($params) {
+		$db = Factory::getContainer()->get('DatabaseDriver');
         $query = $db->getQuery(true);
         $query->update($db->quoteName('#__extensions'));
         $query->set($db->quoteName('params') . ' = ' . $db->quote((string)$params));

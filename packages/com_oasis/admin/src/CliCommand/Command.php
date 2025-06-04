@@ -14,16 +14,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * @package     Oasis
- * @subpackage  Administrator
- *
- * @author      Viktor G. <ever2013@mail.ru>
- * @copyright   Copyright (C) 2023 Oasiscatalog. All rights reserved.
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- * @link        https://www.oasiscatalog.com/
- * @since 4.0
- */
+
 class Command extends \Joomla\Console\Command\AbstractCommand
 {
     use MVCFactoryAwareTrait;
@@ -97,6 +88,8 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         $this->addOption('up', '', InputOption::VALUE_NONE, Text::_('COM_OASIS_CLI_UP_DESC'));
         $this->addOption('debug', '', InputOption::VALUE_NONE, 'Console debug');
         $this->addOption('debug_log', '', InputOption::VALUE_NONE, 'Debug log');
+        $this->addOption('add_image', '', InputOption::VALUE_NONE, 'Add product image if empty');
+        $this->addOption('up_image', '', InputOption::VALUE_NONE, 'Update only product image');
     }
 
     /**
@@ -107,51 +100,61 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     {
         set_time_limit(0);
         ini_set('memory_limit', '4G');
+
+        $opt = $input->getOptions();
         $this->cf = OasisConfig::instance([
-            'debug' =>      !empty($input->getOption('debug')),
-            'debug_log' =>  !empty($input->getOption('debug_log'))
+            'debug' =>      !empty($opt['debug']),
+            'debug_log' =>  !empty($opt['debug_log'])
         ]);
-        $this->cf->lock(\Closure::bind(function() use ($input, $output) {
-            $this->cf->configureSymfonyIO($input, $output);
-            $this->cf->init();
-            $this->cf->initRelation();
 
-            if (empty($this->cf->api_key)) {
-                $this->cf->log(Text::_('COM_OASIS_CLI_NOT_API_KEY'), 'warn');
-                return 1;
-            } elseif (empty($input->getOption('key'))) {
-                $this->cf->log(Text::_('COM_OASIS_CLI_NOT_KEY'), 'warn');
-                return 1;
-            } elseif (!$this->cf->checkCronKey($input->getOption('key'))) {
-                $this->cf->log(Text::_('COM_OASIS_CLI_INVALID_KEY'), 'warn');
-                return 1;
-            }
-            if (!$this->cf->checkPermissionImport()) {
-                $this->cf->log('Import once day', 'warn');
-                return 1;
-            }
+        $this->cf->init();
+        $this->cf->initRelation();
+        $this->cf->configureSymfonyIO($input, $output);
+        $this->model = new OasisModel();
 
-            $this->model = new OasisModel();
-
-            try {
-                $start_time = microtime(true);
-
-                if (!$input->getOption('up')) {
-                    $this->upProduct();
-                } else {
-                    $this->upStock();
+        if (!empty($opt['add_image']) || !empty($opt['up_image'])) {
+            $this->addImage([
+                'is_up' => !empty($opt['up_image'])
+            ]);
+            return 0;
+        }
+        else {
+            $this->cf->lock(\Closure::bind(function() use ($input, $output) {
+                if (empty($this->cf->api_key)) {
+                    $this->cf->log(Text::_('COM_OASIS_CLI_NOT_API_KEY'), 'warn');
+                    return 1;
+                } elseif (empty($input->getOption('key'))) {
+                    $this->cf->log(Text::_('COM_OASIS_CLI_NOT_KEY'), 'warn');
+                    return 1;
+                } elseif (!$this->cf->checkCronKey($input->getOption('key'))) {
+                    $this->cf->log(Text::_('COM_OASIS_CLI_INVALID_KEY'), 'warn');
+                    return 1;
+                }
+                if (!$this->cf->checkPermissionImport()) {
+                    $this->cf->log('Import once day', 'warn');
+                    return 1;
                 }
 
-                $end_time = microtime(true);
-                $this->cf->log('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.', 'success');
-            } catch (Exception $e) {
-                echo $e->getMessage() . PHP_EOL;
-                exit($e->getCode());
-            }
-        }, $this), \Closure::bind(function() {
-            $this->cf->log('Already running');
-        }, $this));
-        return 0;
+                try {
+                    $start_time = microtime(true);
+
+                    if (!$input->getOption('up')) {
+                        $this->upProduct();
+                    } else {
+                        $this->upStock();
+                    }
+
+                    $end_time = microtime(true);
+                    $this->cf->log('Время выполнения скрипта: ' . ($end_time - $start_time) . ' сек.', 'success');
+                } catch (Exception $e) {
+                    echo $e->getMessage() . PHP_EOL;
+                    exit($e->getCode());
+                }
+            }, $this), \Closure::bind(function() {
+                $this->cf->log('Already running');
+            }, $this));
+            return 0;
+        }
     }
 
     /**
@@ -276,7 +279,75 @@ class Command extends \Joomla\Console\Command\AbstractCommand
 
 
     /**
-     * @param      $product
+     * Add image product
+     *
+     * @param array $opt
+     * @since 4.0
+     */
+    private function addImage(array $opt = []): void
+    {
+        $this->cf->log('Start '. ($opt['is_up'] ? 'up' : 'add') . ' products image');
+
+        $this->products = OasisHelper::getOasisProducts();
+        $group_ids = [];
+        foreach ($this->products as $product) {
+            $group_ids[$product->group_id][$product->id] = $product;
+        }
+
+        if ($group_ids) {
+            foreach ($group_ids as $group_id => $products) {
+                if (count($products) === 1) {
+                    $product = reset($products);
+
+                    $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                        'product_parent_id' => 0,
+                        'product_sku'       => $product->article,
+                    ]);
+
+                    if ($dbProductId) {
+                        if ($opt['is_up']) {
+                            $this->removeVirtuemartProductMedia($dbProductId);
+                        }
+                        $this->processingProductMedias($dbProductId, $product);
+                    }
+                } else {
+                    $firstProduct = reset($products);
+                    $dbFirstProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                        'product_parent_id' => 0,
+                        'product_sku'       => $firstProduct->article,
+                    ]);
+
+                    if ($dbFirstProductId) {
+                        if ($opt['is_up']) {
+                            $this->removeVirtuemartProductMedia($dbFirstProductId);
+                        }
+                        $this->processingProductMedias($dbFirstProductId, $firstProduct);
+                    }
+
+                    foreach ($products as $product) {
+                        $dbProductId = $this->model->getData('#__virtuemart_products', ['virtuemart_product_id'], [
+                            'product_parent_id' => $dbFirstProductId,
+                            'product_sku'       => $product->article,
+                        ]);
+
+                        if ($dbProductId) {
+                            if ($opt['is_up']) {
+                                $this->removeVirtuemartProductMedia($dbProductId);
+                            }
+                        
+                            $this->processingProductMedias($dbProductId, $product, true);
+                        }
+                    }
+                }
+
+                $this->cf->log('OAId=' . $product->id);
+            }
+        }
+    }
+
+
+    /**
+     * @param $product
      * @param bool $firstProduct
      * @return int
      *
@@ -297,7 +368,9 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         $this->virtuemartProductManufacturers($product_id, $product);
 
         // images
-        $this->processingProductMedias($product_id, $product);
+        if (!$this->cf->is_fast_import) {
+            $this->processingProductMedias($product_id, $product);
+        }
 
         // prices
         $this->virtuemartProductPrices($product_id, $product);
@@ -321,35 +394,30 @@ class Command extends \Joomla\Console\Command\AbstractCommand
     }
 
     /**
-     * @param       $product_Id
+     * @param       $product_id
      * @param       $product
      * @param bool $firstProduct
      *
      * @since 4.0
      */
-    public function editProduct($product_Id, $product, bool $firstProduct = false)
+    public function editProduct($product_id, $product, bool $firstProduct = false)
     {
-        $this->editVirtuemartProducts($product_Id, $product);
-        $this->virtuemartProductsLang($product_Id, $product, false, true);
+        $this->editVirtuemartProducts($product_id, $product);
+        $this->virtuemartProductsLang($product_id, $product, false, true);
 
         if(!$this->cf->is_not_up_cat)
-            $this->virtuemartProductCategories($product_Id, $product);
+            $this->virtuemartProductCategories($product_id, $product);
 
         if($this->cf->is_up_photo) {
-            $vmMedias = $this->model->getData('#__virtuemart_product_medias', ['virtuemart_media_id'], ['virtuemart_product_id' => $product_Id], false, 'loadAssocList');
-            foreach ($vmMedias as $vmMedia) {
-                $this->model->deleteData('#__virtuemart_medias', ['virtuemart_media_id' => $vmMedia['virtuemart_media_id']]);
-                $this->model->deleteData('#__virtuemart_product_medias', [ 'virtuemart_media_id' => $vmMedia['virtuemart_media_id']]);
-            }
-
-            $this->processingProductMedias($product_Id, $product);
+            $this->removeVirtuemartProductMedia($product_id);
+            $this->processingProductMedias($product_id, $product);
         }
 
-        $this->virtuemartProductManufacturers($product_Id, $product);
-        $this->virtuemartProductPrices($product_Id, $product);
+        $this->virtuemartProductManufacturers($product_id, $product);
+        $this->virtuemartProductPrices($product_id, $product);
 
         if ($firstProduct == false) {
-            $this->oasisProduct($product_Id, $product);
+            $this->oasisProduct($product_id, $product);
         }
     }
 
@@ -379,7 +447,9 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         $product_id = $this->addVirtuemartProducts($product, $dataProducts);
 
         // images
-        $this->processingProductMedias($product_id, $product, true);
+        if (!$this->cf->is_fast_import) {
+            $this->processingProductMedias($product_id, $product, true);
+        }
 
         // add product in table default lang virtuemart
         $this->virtuemartProductsLang($product_id, $product, true);
@@ -409,6 +479,7 @@ class Command extends \Joomla\Console\Command\AbstractCommand
         }
 
         if($this->cf->is_up_photo) {
+            $this->removeVirtuemartProductMedia($product_id);
             $this->processingProductMedias($product_id, $product, true);
         }
 
@@ -788,33 +859,31 @@ class Command extends \Joomla\Console\Command\AbstractCommand
      *
      * @param $product_id
      * @param $product
-     * @param false $isChild
+     * @param bool $isChild
      *
      * @since 4.0
      */
     public function processingProductMedias($product_id, $product, bool $isChild = false)
     {
+        if ($isChild) {
+            $existParentProductId = $this->model->getData('#__oasis_product', ['product_id'], ['color_group_id' => $product->color_group_id]);
+            if (!empty($existParentProductId)) {
+                $vmMediaIds = $this->model->getData('#__virtuemart_product_medias', ['virtuemart_media_id'], ['virtuemart_product_id' => $existParentProductId], false, 'loadAssocList');
+                if ($vmMediaIds) {
+                    foreach ($vmMediaIds as $key => $vmMediaId) {
+                        $this->addVirtuemartProductMedia($product_id, $vmMediaId['virtuemart_media_id'], ++$key);
+                    }
+                    return;
+                }
+            }
+        }
+
         if (is_array($product->images)) {
             foreach ($product->images as $key => $image) {
                 if (isset($image->superbig)) {
                     $vmImageId = $this->model->getData('#__virtuemart_medias', ['virtuemart_media_id'], ['file_title' => pathinfo($image->superbig)['filename']]);
 
                     if (is_null($vmImageId)) {
-                        if ($isChild) {
-                            $existParentProductId = $this->model->getData('#__oasis_product', ['product_id'], ['color_group_id' => $product->color_group_id]);
-
-                            if (!empty($existParentProductId)) {
-                                $vmMediaIds = $this->model->getData('#__virtuemart_product_medias', ['virtuemart_media_id'], ['virtuemart_product_id' => $existParentProductId], false, 'loadAssocList');
-
-                                if ($vmMediaIds) {
-                                    foreach ($vmMediaIds as $vmMediaId) {
-                                        $this->addVirtuemartProductMedia($product_id, $vmMediaId['virtuemart_media_id'], ++$key);
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-
                         $vmImageId = $this->saveProductImage($image);
                     }
 
@@ -877,6 +946,25 @@ class Command extends \Joomla\Console\Command\AbstractCommand
                 'virtuemart_media_id'   => $vmImageId,
                 'ordering'              => $ordering,
             ]);
+
+            // иногда сбрасывает в 0
+            $this->model->upData('#__virtuemart_products', ['virtuemart_product_id' => $product_id], ['has_medias' => 1]);
+        }
+    }
+
+    /**
+     * Remove image
+     *
+     * @param $product_id
+     *
+     * @since 4.0
+     */
+    public function removeVirtuemartProductMedia($product_id)
+    {
+        $vmMedias = $this->model->getData('#__virtuemart_product_medias', ['virtuemart_media_id'], ['virtuemart_product_id' => $product_id], false, 'loadAssocList');
+        foreach ($vmMedias as $vmMedia) {
+            $this->model->deleteData('#__virtuemart_product_medias', [ 'virtuemart_media_id' => $vmMedia['virtuemart_media_id']]);
+            $this->model->deleteData('#__virtuemart_medias', ['virtuemart_media_id' => $vmMedia['virtuemart_media_id']]);
         }
     }
 

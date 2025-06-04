@@ -4,6 +4,7 @@
         <field name="categories" type="treecheckbox" label="Категории" description="Дерево категорий"/>
         <field name="is_not_up_cat" type="checkbox" label="Не обновлять категории" />
         <field name="is_cdn_photo" type="checkbox" label="Использовать сервер Oasis для изображений" />
+        <field name="is_fast_import" type="checkbox" label="Быстрый импорт товаров (без фото)" />
         <field name="is_up_photo" type="checkbox" label="Обновлять фото товаров" />
         <field name="currency" type="list" label="Валюта" description="Валюта для загрузки">
             <option value="rub">Российский рубль</option>
